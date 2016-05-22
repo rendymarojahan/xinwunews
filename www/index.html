@@ -12,7 +12,19 @@
     <link href="css/ionic.app.css" rel="stylesheet">
     -->
     <script src="https://cdn.firebase.com/libs/angularfire/1.2.0/angularfire.min.js">></script>
-    <script src="https://cdn.firebase.com/js/client/2.3.1/firebase.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/live/3.0/firebase.js"></script>
+    <script>
+      // Initialize Firebase
+      var config = {
+        apiKey: "AIzaSyBpSyEHe_UDRM6MeLt5zWgfsV6PrRKlQnA",
+        authDomain: "xinwu.firebaseapp.com",
+        databaseURL: "https://xinwu.firebaseio.com",
+        storageBucket: "project-8289938295527872229.appspot.com",
+      };
+      firebase.initializeApp(config);
+    </script>
+        
     <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-filter/0.5.7/angular-filter.min.js"></script>
 
     <!-- ionic/angularjs js -->
