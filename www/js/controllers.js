@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout) {
+.controller('AppCtrl', function($scope, $ionicModal, $timeout, $rootScope, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
 
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
@@ -30,8 +30,55 @@ angular.module('starter.controllers', [])
   };
 
   // Perform the login action when the user submits the login form
-  $scope.doLogin = function() {
+  $scope.doLogin = function(user) {
     console.log('Doing login', $scope.loginData);
+    $ionicLoading.show({
+        template: '<ion-spinner icon="ios"></ion-spinner><br>Loggin In...'
+    });
+
+    /* Check user fields*/
+    if (!user.email || !user.password) {
+        $ionicLoading.hide();
+        $ionicPopup.alert({title: 'Login Failed', template: 'Please check your Email or Password!'});
+        return;
+    }
+
+    /* Authenticate User */
+    fb.authWithPassword({
+        "email": user.email,
+        "password": user.password
+    }, function (error, authData) {
+        if (error) {
+            //console.log("Login Failed!", error);
+            $ionicLoading.hide();
+            $ionicPopup.alert({title: 'Login Failed', template: 'Check your credentials and try again!'});
+        } else {
+            
+            MembersFactory.getMember(authData).then(function (thisuser) {
+
+            	$scope.firstname = thisuser.firstname;
+				$scope.surename = thisuser.surename;
+				$scope.fullname = function (){
+					return $scope.firstname +" "+ $scope.surename;
+				};
+                
+                /* Save user data for later use */
+                myCache.put('thisGroupId', thisuser.group_id);
+                myCache.put('thisUserName', $scope.fullname());
+                myCache.put('thisMemberId', authData.uid);
+                myCache.put('thisPublicId', thisuser.public_id);
+                CurrentUserService.updateUser(thisuser);
+
+                if (thisuser.group_id === '') {
+                    $ionicLoading.hide();
+                    $state.go('groupchoice');
+                } else {
+                    $ionicLoading.hide();
+                    $state.go('tabsController.people', { memberPublicId: thisuser.public_id, memberId: authData.uid });
+                }
+            });
+        }
+    });
 
     // Simulate a login delay. Remove this and replace with your login
     // code if using a login system
