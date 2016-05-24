@@ -8,6 +8,61 @@ angular.module('starter.controllers', [])
   // listen for the $ionicView.enter event:
   //$scope.$on('$ionicView.enter', function(e) {
   //});
+  $scope.user = {};
+  $scope.doLogin = function(user) {
+    $ionicLoading.show({
+        template: '<ion-spinner icon="ios"></ion-spinner><br>Loggin In...'
+    });
+
+    /* Check user fields*/
+    if (!user.email || !user.password) {
+        $ionicLoading.hide();
+        $ionicPopup.alert({title: 'Login Failed', template: 'Please check your Email or Password!'});
+        return;
+    }
+
+    /* Authenticate User */
+    var email = user.email;
+    var password = user.password;
+    firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
+    	if (firebase.auth().currentUser) {
+	        $ionicLoading.hide();
+	        firebase.auth().signOut();
+        }
+    	var errorCode = error.code;
+        var errorMessage = error.message;
+        if (errorCode == 'auth/wrong-password') {
+          $ionicLoading.hide();
+          alert('Wrong password');
+        } else {
+            $ionicLoading.hide();
+            $ionicPopup.alert({title: 'Login Failed', template: 'Check your credentials and try again!'});
+        }
+        firebase.auth().onAuthStateChanged(function(user) {
+		    if (user) {
+		      var userId = firebase.auth().currentUser.uid;
+		      fb.ref('/admins/' + userId).once('value').then(function(snapshot) {
+				$scope.firstname = snapshot.val().firstname;
+				$scope.surename = snapshot.val().surename;
+				$scope.fullname = function (){
+					return $scope.firstname +" "+ $scope.surename;
+				};
+                myCache.put('thisUserName', $scope.fullname());
+                myCache.put('thisMemberId', userId);
+                CurrentUserService.updateUser(snapshot);
+                if (snapshot.val().firstname !== '') {
+                    $ionicLoading.hide();
+                    $scope.modal.hide();
+                }
+			  });
+		    } else {
+	            $ionicLoading.hide();
+	            $ionicPopup.alert({title: 'Login Failed', template: 'No User Signin'});
+        	}
+		});   
+            
+    });
+  }
 
   // Form data for the login modal
   $scope.loginData = {};
@@ -30,62 +85,7 @@ angular.module('starter.controllers', [])
   };
 
   // Perform the login action when the user submits the login form
-  $scope.doLogin = function(user) {
-    console.log('Doing login', $scope.loginData);
-    $ionicLoading.show({
-        template: '<ion-spinner icon="ios"></ion-spinner><br>Loggin In...'
-    });
-
-    /* Check user fields*/
-    if (!user.email || !user.password) {
-        $ionicLoading.hide();
-        $ionicPopup.alert({title: 'Login Failed', template: 'Please check your Email or Password!'});
-        return;
-    }
-
-    /* Authenticate User */
-    fb.authWithPassword({
-        "email": user.email,
-        "password": user.password
-    }, function (error, authData) {
-        if (error) {
-            //console.log("Login Failed!", error);
-            $ionicLoading.hide();
-            $ionicPopup.alert({title: 'Login Failed', template: 'Check your credentials and try again!'});
-        } else {
-            
-            MembersFactory.getMember(authData).then(function (thisuser) {
-
-            	$scope.firstname = thisuser.firstname;
-				$scope.surename = thisuser.surename;
-				$scope.fullname = function (){
-					return $scope.firstname +" "+ $scope.surename;
-				};
-                
-                /* Save user data for later use */
-                myCache.put('thisGroupId', thisuser.group_id);
-                myCache.put('thisUserName', $scope.fullname());
-                myCache.put('thisMemberId', authData.uid);
-                myCache.put('thisPublicId', thisuser.public_id);
-                CurrentUserService.updateUser(thisuser);
-
-                if (thisuser.group_id === '') {
-                    $ionicLoading.hide();
-                    $state.go('groupchoice');
-                } else {
-                    $ionicLoading.hide();
-                    $state.go('tabsController.people', { memberPublicId: thisuser.public_id, memberId: authData.uid });
-                }
-            });
-        }
-    });
-
-    // Simulate a login delay. Remove this and replace with your login
-    // code if using a login system
-    $timeout(function() {
-      $scope.closeLogin();
-    }, 1000);
-  };
+  
 })
 
 .controller('PlaylistsCtrl', function($scope) {
@@ -99,8 +99,13 @@ angular.module('starter.controllers', [])
   ];
 })
 
-.controller('NewsCtrl', function($scope) {
-  $scope.isadmin = false;
+.controller('NewsCtrl', function($scope, CurrentUserService) {
+  	$scope.isadmin = false;
+  	$scope.$on('$ionicView.beforeEnter', function () {
+        if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
+            $scope.isadmin = CurrentUserService.isadmin;
+        }
+    });
 })
 
 .controller('PlaylistCtrl', function($scope, $stateParams) {

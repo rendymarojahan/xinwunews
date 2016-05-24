@@ -11,18 +11,14 @@ angular.module('starter.services', [])
 })
 
 .factory('MembersFactory', function ($firebaseArray, $q, myCache, $timeout) {
-        var ref = fb.child("admins");
-        var mRef = {};
-        var members = {};
-        mRef = fb.child("members").orderByChild('group_id');
-        members = $firebaseArray(mRef);
+        var ref = fb.ref("admins");
         return {
             ref: function () {
                 return ref;
             },
-            getMember: function (authData) {
+            getMember: function (userId) {
                 var deferred = $q.defer();
-                var memberRef = ref.child(authData.uid);
+                var memberRef = fb.ref('/admins/' + userId);
                 memberRef.once("value", function (snap) {
                     deferred.resolve(snap.val());
                 });
@@ -489,6 +485,7 @@ angular.module('starter.services', [])
             this.defaultdate = user.defaultdate;
             this.lastdate = user.lastdate;
             this.photo = user.photo;
+            this.isadmin = user.isadmin;
         }
 })
 
