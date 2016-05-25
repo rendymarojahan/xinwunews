@@ -11,57 +11,54 @@ angular.module('starter.controllers', [])
   $scope.user = {};
   $scope.doLogin = function(user) {
     $ionicLoading.show({
-        template: '<ion-spinner icon="ios"></ion-spinner><br>Loggin In...'
-    });
+            template: '<ion-spinner icon="ios"></ion-spinner><br>Loggin In...'
+        });
 
-    /* Check user fields*/
-    if (!user.email || !user.password) {
-        $ionicLoading.hide();
-        $ionicPopup.alert({title: 'Login Failed', template: 'Please check your Email or Password!'});
-        return;
-    }
-
-    /* Authenticate User */
-    var email = user.email;
-    var password = user.password;
-    firebase.auth().signInWithEmailAndPassword(email, password).catch(function(error) {
-    	if (firebase.auth().currentUser) {
-	        $ionicLoading.hide();
-	        firebase.auth().signOut();
-        }
-    	var errorCode = error.code;
-        var errorMessage = error.message;
-        if (errorCode == 'auth/wrong-password') {
-          $ionicLoading.hide();
-          alert('Wrong password');
-        } else {
+        /* Check user fields*/
+        if (!user.email || !user.password) {
             $ionicLoading.hide();
-            $ionicPopup.alert({title: 'Login Failed', template: 'Check your credentials and try again!'});
+            $ionicPopup.alert({title: 'Login Failed', template: 'Please check your Email or Password!'});
+            return;
         }
-        firebase.auth().onAuthStateChanged(function(user) {
-		    if (user) {
-		      var userId = firebase.auth().currentUser.uid;
-		      fb.ref('/admins/' + userId).once('value').then(function(snapshot) {
-				$scope.firstname = snapshot.val().firstname;
-				$scope.surename = snapshot.val().surename;
-				$scope.fullname = function (){
-					return $scope.firstname +" "+ $scope.surename;
-				};
-                myCache.put('thisUserName', $scope.fullname());
-                myCache.put('thisMemberId', userId);
-                CurrentUserService.updateUser(snapshot);
-                if (snapshot.val().firstname !== '') {
-                    $ionicLoading.hide();
-                    $scope.modal.hide();
-                }
-			  });
-		    } else {
-	            $ionicLoading.hide();
-	            $ionicPopup.alert({title: 'Login Failed', template: 'No User Signin'});
-        	}
-		});   
-            
-    });
+
+        /* Authenticate User */
+        fb.authWithPassword({
+            "email": user.email,
+            "password": user.password
+        }, function (error, authData) {
+            if (error) {
+                //console.log("Login Failed!", error);
+                $ionicLoading.hide();
+                $ionicPopup.alert({title: 'Login Failed', template: 'Check your credentials and try again!'});
+            } else {
+                
+                MembersFactory.getMember(authData).then(function (thisuser) {
+
+                	$scope.firstname = thisuser.firstname;
+    				$scope.surename = thisuser.surename;
+    				$scope.fullname = function (){
+    					return $scope.firstname +" "+ $scope.surename;
+    				};
+                    
+                    /* Save user data for later use */
+                    myCache.put('thisGroupId', thisuser.group_id);
+                    myCache.put('thisUserName', $scope.fullname());
+                    myCache.put('thisMemberId', authData.uid);
+                    myCache.put('thisPublicId', thisuser.public_id);
+                    CurrentUserService.updateUser(thisuser);
+
+                    if (thisuser.firstname !== '' && thisuser.isadmin === true) {
+                    	CurrentUserService.isadmin = true;
+                        $ionicLoading.hide();
+                        $scope.modal.hide();
+                        $state.reload('app.news');
+                    } else {
+                        $ionicLoading.hide();
+                		$ionicPopup.alert({title: 'Login Failed', template: 'Binding Failed'});
+                    }
+                });
+            }
+        });
   }
 
   // Form data for the login modal
@@ -99,13 +96,364 @@ angular.module('starter.controllers', [])
   ];
 })
 
-.controller('NewsCtrl', function($scope, CurrentUserService) {
-  	$scope.isadmin = false;
+.controller('NewsCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+	$scope.news = [];
+	$scope.isshow = false;
+    $scope.userId = myCache.get('thisMemberId')
+    $scope.photo = CurrentUserService.photo;
+
+    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        if (fromState.name === "app.news") {
+            refresh($scope.news, $scope, NewsFactory);
+        }
+    });
+
+    $scope.news = NewsFactory.getNews();
+    $scope.news.$loaded().then(function (x) {
+    	refresh($scope.news, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+    });
+
+    $scope.doRefresh = function (){
+
+    	$scope.new = NewsFactory.getNews();
+	    $scope.new.$loaded().then(function (x) {
+			$scope.news = $scope.new.concat($scope.news);
+	        refresh($scope.news, $scope, NewsFactory);
+	        $scope.$broadcast('scroll.refreshComplete');
+	    }).catch(function (error) {
+	        console.error("Error:", error);
+	    });
+
+    };
+
+    var filterBarInstance;
+    $scope.showFilterBar = function () {
+        filterBarInstance = $ionicFilterBar.show({
+            items: $scope.news,
+            update: function (filteredItems, filterText) {
+                $scope.news = filteredItems;
+            },
+            filterProperties: 'title'
+        });
+    };
+
+    $scope.listCanSwipe = true;
+    $scope.handleSwipeOptions = function ($event, news) {
+        $state.go('app.post', { postId: news.$id });
+    };
+
+	$scope.isadmin = CurrentUserService.isadmin;
   	$scope.$on('$ionicView.beforeEnter', function () {
         if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
             $scope.isadmin = CurrentUserService.isadmin;
         }
     });
+
+    $scope.createPosting = function () {
+        PickTransactionServices.typeDisplaySelected = '';
+        PickTransactionServices.typeInternalSelected = '';
+        PickTransactionServices.dateSelected = '';
+        PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+        PickTransactionServices.noteSelected = '';
+        PickTransactionServices.titleSelected = '';
+        $state.go('app.posting');
+    }
+
+    function refresh(news, $scope, NewsFactory) {
+    
+    }
+})
+
+.controller('PostingCtrl', function ($scope, $state, $stateParams, $cordovaSocialSharing, $cordovaCamera, $ionicActionSheet, $ionicHistory, AccountsFactory, PickTransactionServices, myCache, CurrentUserService) {
+
+    $scope.hideValidationMessage = true;
+    $scope.loadedClass = 'hidden';
+    $scope.transactions = [];
+    $scope.AccountTitle = '';
+    $scope.inEditMode = false;
+    $scope.isTransfer = false;
+    $scope.ItemFrom = {};
+    $scope.ItemTo = {};
+    $scope.ItemOriginal = {};
+    $scope.DisplayDate = '';
+    $scope.currentItem = {
+        'date': '',
+        'isphoto': false,
+        'title': '',
+        'note': '',
+        'payee': '',
+        'photo': '',
+        'comments': '',
+        'likes': '',
+        'typedisplay': ''
+    };
+
+    $scope.firstname = CurrentUserService.firstname;
+    $scope.surename = CurrentUserService.surename;
+    $scope.fullname = function (){
+    	return $scope.firstname +" "+ $scope.surename;
+    };
+    $scope.photo = CurrentUserService.photo;
+    $scope.admin = CurrentUserService.isadmin;
+
+    $scope.$on('$ionicView.beforeEnter', function () {
+        $scope.hideValidationMessage = true;
+        $scope.currentItem.typedisplay = PickTransactionServices.typeDisplaySelected;
+        $scope.currentItem.photo = PickTransactionServices.photoSelected;
+        if ($scope.currentItem.photo === 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==') {
+            $scope.currentItem.photo = '';
+            $scope.currentItem.isphoto = false;
+        }
+        $scope.currentItem.title = PickTransactionServices.titleSelected;
+        $scope.currentItem.note = PickTransactionServices.noteSelected;
+        // Handle transaction date
+        if (typeof PickTransactionServices.dateSelected !== 'undefined' && PickTransactionServices.dateSelected !== '') {
+            $scope.DisplayDate = PickTransactionServices.dateSelected;
+        }
+        // Handle Two Ways Binding
+        if ($scope.currentItem.typedisplay === "News"){
+        	$scope.type = function (){ return "create News";};
+    	} else if ($scope.currentItem.typedisplay === "Tutorial"){
+        	$scope.type = function (){ return "create Tutorial ";};
+        } else if ($scope.currentItem.typedisplay === "Tips"){
+        	$scope.type = function (){ return "create Tips ";};
+        }
+    	if ($scope.currentItem.note !== ''){
+        	$scope.note = function (){ return " " + $scope.currentItem.note;};
+    	}
+    	if ($scope.currentItem.photo !== ''){
+        	$scope.sphoto = function (){ return " " + $scope.currentItem.photo;};
+    	}
+    });
+
+    // PICK TRANSACTION TYPE
+    $scope.pickPostPhoto = function() {
+	
+		$scope.hideSheet = $ionicActionSheet.show({
+
+			buttons: [
+        		{ text: '<i class="icon ion-camera"></i> Take Picture' },
+        		{ text: '<i class="icon ion-images"></i> Choose Album' },
+    		],
+			buttonClicked: function(index) {
+				switch (index) {
+                case 0:
+                    $scope.currentItem = { photo: PickTransactionServices.photoSelected };
+        				
+            				var options = {
+			                quality: 75,
+			                destinationType: Camera.DestinationType.DATA_URL,
+			                sourceType: Camera.PictureSourceType.CAMERA,
+			                allowEdit: false,
+			                encodingType: Camera.EncodingType.JPEG,
+			                popoverOptions: CameraPopoverOptions,
+			                targetWidth: 800,
+			                targetHeight: 800,
+			                saveToPhotoAlbum: false
+            				};
+				            $cordovaCamera.getPicture(options).then(function (imageData) {
+				                $scope.currentItem.photo = imageData;
+								PickTransactionServices.updatePhoto($scope.currentItem.photo);
+								$scope.currentItem.isphoto = true;
+				            }, function (error) {
+				                console.error(error);
+				            })
+
+                break;
+                case 1:
+                	$scope.currentItem = { photo: PickTransactionServices.photoSelected };
+            				var options = {
+			                quality: 75,
+			                destinationType: Camera.DestinationType.DATA_URL,
+			                sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+			                allowEdit: false,
+			                encodingType: Camera.EncodingType.JPEG,
+			                popoverOptions: CameraPopoverOptions,
+			                targetWidth: 800,
+			                targetHeight: 800,
+			                saveToPhotoAlbum: false
+            				};
+				            $cordovaCamera.getPicture(options).then(function (imageData) {
+				                $scope.currentItem.photo = imageData;
+				                PickTransactionServices.updatePhoto($scope.currentItem.photo);
+				                $scope.currentItem.isphoto = true;
+				            }, function (error) {
+				                console.error(error);
+				            })
+        			
+                break;
+            	}
+            	return true;
+    		},
+			cancelText: 'Cancel',
+				cancel: function() {
+				console.log('CANCELLED');
+			}
+		});	
+	}
+    // PICK TRANSACTION TYPE
+    // Don't let users change the transaction type. If needed, a user can delete the transaction and add a new one
+    $scope.pickNewsType = function () {
+        if ($scope.currentItem.istransfer) {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Transaction type on transfers cannot be changed."
+            return;
+        } else {
+            $state.go('app.picknewstype');
+        }
+    }
+
+    $scope.shareViaTwitter = function(message, image, link) {
+    	if (typeof $scope.currentItem.note === 'undefined' || $scope.currentItem.note === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please type some note"
+            return;
+        }
+        if (typeof $scope.currentItem.photo === 'undefined' || $scope.currentItem.photo === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please take a photo"
+            return;
+        }else {
+	        $cordovaSocialSharing.canShareVia("twitter", message, image, link).then(function(result) {
+	            $cordovaSocialSharing.shareViaTwitter(message, image, link);
+	        }, function(error) {
+	            alert("Cannot share on Twitter");
+	        });
+	    }
+    }
+
+    $scope.shareViaFacebook = function(message, image, link) {
+    	if (typeof $scope.currentItem.note === 'undefined' || $scope.currentItem.note === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please type some note"
+            return;
+        }
+        if (typeof $scope.currentItem.photo === 'undefined' || $scope.currentItem.photo === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please take a photo"
+            return;
+        }else {
+	        $cordovaSocialSharing.shareViaFacebook(message, image, link).then(function(result) {
+	            alert("Share on Facebook Success");
+	        }, function(error) {
+	            alert("Cannot share on Facebook");
+	        });
+	    }
+    }
+
+    // SAVE
+    $scope.savePosting = function () {
+
+        // Validate form data
+        if (typeof $scope.currentItem.typedisplay === 'undefined' || $scope.currentItem.typedisplay === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please select News Type"
+            return;
+        }
+        if (typeof $scope.currentItem.title === 'undefined' || $scope.currentItem.title === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please create a Title"
+            return;
+        }
+        if (typeof $scope.currentItem.note === 'undefined' || $scope.currentItem.note === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please create a Note"
+            return;
+        }
+
+        // Format date
+        $scope.currentItem.date = Date.now();
+        if (typeof $scope.currentItem.date === 'undefined' || $scope.currentItem.date === '') {
+            $scope.hideValidationMessage = false;
+            $scope.validationMessage = "Please select a date for this transaction"
+            return;
+        }
+
+        if ($scope.inEditMode) {
+            //
+            // Update Existing Transaction
+            //
+            var onComplete = function (error) {
+                if (error) {
+                    //console.log('Synchronization failed');
+                }
+            };
+            AccountsFactory.saveTransaction($scope.currentItem);
+            var accountId = '';
+            var otherAccountId = '';
+            var OtherTransaction = {};
+            if ($scope.ItemOriginal.istransfer) {
+                if ($stateParams.accountId === $scope.currentItem.accountToId) {
+                    // Transfer is coming into the current account --> income
+                    $scope.currentItem.type = 'Income';
+                    accountId = $scope.currentItem.accountToId;
+                    otherAccountId = $scope.currentItem.accountFromId;
+                    OtherTransaction.type = 'Expense';
+                    OtherTransaction.amount = $scope.currentItem.amount;
+                } else {
+                    // Transfer is moving into the other account --> expense
+                    $scope.currentItem.type = 'Expense';
+                    accountId = $scope.currentItem.accountFromId;
+                    otherAccountId = $scope.currentItem.accountToId;
+                    OtherTransaction.type = 'Income';
+                    OtherTransaction.amount = $scope.currentItem.amount;
+                }
+
+                console.log(OtherTransaction);
+
+                var transferRef = AccountsFactory.getTransactionRef(otherAccountId, $scope.ItemOriginal.linkedtransactionid);
+                transferRef.update(OtherTransaction);
+            }
+
+            $scope.inEditMode = false;
+            //
+        } else {
+            $scope.currentItem.addedby = myCache.get('thisUserName');
+            $scope.currentItem.userid = myCache.get('thisMemberId');
+            //
+            AccountsFactory.createPosting($scope.currentItem);
+        }
+        $scope.currentItem = {};
+        $ionicHistory.goBack();
+    }
+})
+
+.controller('NewsTypeCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+    $scope.NewsTypeList = [
+        { text: 'News', value: 'News' },
+        { text: 'Tutorial', value: 'Tutorial' },
+        { text: 'Tips', value: 'Tips' }];
+    $scope.currentItem = { typedisplay: PickTransactionServices.typeDisplaySelected };
+    $scope.itemchanged = function (item) {
+        PickTransactionServices.updateType(item.value, item.value);
+        $ionicHistory.goBack();
+    };
+})
+
+.controller('NewsTitleCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+
+    if (typeof PickTransactionServices.titleSelected !== 'undefined' && PickTransactionServices.titleSelected !== '') {
+        $scope.title = PickTransactionServices.titleSelected;
+    }
+    $scope.saveNote = function () {
+        PickTransactionServices.updateTitle($scope.title);
+        $ionicHistory.goBack();
+    };
+
+})
+
+.controller('NewsContentCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+
+    if (typeof PickTransactionServices.noteSelected !== 'undefined' && PickTransactionServices.noteSelected !== '') {
+        $scope.note = PickTransactionServices.noteSelected;
+    }
+    $scope.saveNote = function () {
+        PickTransactionServices.updateNote($scope.note);
+        $ionicHistory.goBack();
+    };
+
 })
 
 .controller('PlaylistCtrl', function($scope, $stateParams) {

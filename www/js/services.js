@@ -11,14 +11,14 @@ angular.module('starter.services', [])
 })
 
 .factory('MembersFactory', function ($firebaseArray, $q, myCache, $timeout) {
-        var ref = fb.ref("admins");
+        var ref = fb.child("admins");
         return {
             ref: function () {
                 return ref;
             },
-            getMember: function (userId) {
+            getMember: function (authData) {
                 var deferred = $q.defer();
-                var memberRef = fb.ref('/admins/' + userId);
+                var memberRef = ref.child(authData.uid);
                 memberRef.once("value", function (snap) {
                     deferred.resolve(snap.val());
                 });
@@ -118,46 +118,7 @@ angular.module('starter.services', [])
         };
 })
 
-.factory('CategoriesFactory', function ($firebaseArray, $q, myCache) {
-        var ref = {};
-        var categories = {};
-        var parentcategories = {};
-        var categoriesByType = {};
-        var categoryRef = {};
-        var thisGroupId = myCache.get('thisGroupId');
-        var thisMemberId = myCache.get('thisMemberId');
-        return {
-            getCategories: function (type) {
-                ref = fb.child("members").child(thisMemberId).child("membercategories").child(type).orderByChild('categoryname');
-                categories = $firebaseArray(ref);
-                return categories;
-            },
-            getParentCategories: function (type) {
-                ref = fb.child("members").child(thisMemberId).child("membercategories").child(type).orderByChild('categoryparent');
-                parentcategories = $firebaseArray(ref);
-                return parentcategories;
-            },
-            getCategoriesByTypeAndGroup: function (type) {
-                ref = fb.child("members").child(thisMemberId).child("membercategories").child(type).orderByChild('categoryparent');
-                categoriesByType = $firebaseArray(ref);
-                return categoriesByType;
-            },
-            getCategory: function (categoryid, type) {
-                var deferred = $q.defer();
-                ref = fb.child("members").child(thisMemberId).child("membercategories").child(type).child(categoryid);
-                ref.once("value", function (snap) {
-                    deferred.resolve(snap.val());
-                });
-                return deferred.promise;
-            },
-            getCategoryRef: function (categoryid, type) {
-                categoryRef = fb.child("members").child(thisMemberId).child("membercategories").child(type).child(categoryid);
-                return categoryRef;
-            },
-        };
-})
-
-.factory('PublicsFactory', function ($firebaseArray, $q, myCache, MembersFactory, CurrentUserService) {
+.factory('NewsFactory', function ($firebaseArray, $q, myCache, MembersFactory, CurrentUserService) {
         var ref = {};
         var publicRef = {};
         var thisPublicId = CurrentUserService.public_id;
@@ -167,8 +128,8 @@ angular.module('starter.services', [])
                 ref = fb.child("publics").child(thisPublicId).child(thisUserId);
                 return ref;
             },
-            getPublics: function () {
-                ref = fb.child("publics").child(thisPublicId).child(thisUserId);
+            getNews: function () {
+                ref = fb.child("postings");
                 publicRef = $firebaseArray(ref);
                 return publicRef;
             }
@@ -225,14 +186,6 @@ angular.module('starter.services', [])
                 transactionRef = fb.child("members").child(thisMemberId).child("member_transactions").child(accountid).child(transactionid);
                 return transactionRef;
             },
-            //getTransactionByCategoryRef: function (categoryid, transactionid) {
-            //    transactionsbycategoryRef = fb.child("groups").child(thisGroupId).child("membertransactionsbycategory").child(categoryid).child(transactionid);
-            //    return transactionsbycategoryRef;
-            //},
-            //getTransactionByPayeeRef: function (payeeid, transactionid) {
-            //    transactionsbypayeeRef = fb.child("groups").child(thisGroupId).child("membertransactionsbypayee").child(payeeid).child(transactionid);
-            //    return transactionsbypayeeRef;
-            //},
             createNewAccount: function (currentItem) {
                 // Create the account
                 allaccounts.$add(currentItem).then(function (newChildRef) { });
@@ -242,62 +195,9 @@ angular.module('starter.services', [])
                     
                 });
             },
-            createTransaction: function (currentAccountId, currentItem) {
-                //
-                var otherAccountId = '';
-                var OtherTransaction = {};
-                //
-                if (currentItem.istransfer) {
-                    angular.copy(currentItem, OtherTransaction);
-                    if (currentAccountId === currentItem.accountToId) {
-                        //For current account: transfer is coming into the current account as an income
-                        currentItem.type = 'Income';
-                        accountId = currentItem.accountToId;
-                        otherAccountId = currentItem.accountFromId;
-                        OtherTransaction.type = 'Expense';
-                    } else {
-                        //For current account: transfer is moving into the other account as an expense
-                        currentItem.type = 'Expense';
-                        accountId = currentItem.accountFromId;
-                        otherAccountId = currentItem.accountToId;
-                        OtherTransaction.type = 'Income';
-                    }
-                } else {
-                    currentAccountId = currentItem.accountId;
-                }
-                //
-                // Save transaction
-                //
-                var ref = fb.child("members").child(thisMemberId).child("member_transactions").child(currentAccountId);
+            createPosting: function (currentItem) {
+                var ref = fb.child("postings");
                 var newChildRef = ref.push(currentItem);
-                // Save posting public
-                var publicId = myCache.get('thisPublicId');
-                if (publicId = 'undefined'){
-                    var publicId = myCache.get('thisPublicId');
-                    var refPublic = fb.child("publics").child(publicId).child(currentItem.userid);
-                    refPublic.push({ name: currentItem.addedby, 
-                                     location: currentItem.payee,
-                                     note: currentItem.note,
-                                     photo: currentItem.photo,
-                                     date: currentItem.date,
-                                     likes:'',
-                                     views:'',
-                                     comments:''
-                                  });
-                } else {
-                    var publicId = myCache.get('thisPublicId');
-                    var refPublic = fb.child("publics").child(publicId).child(currentItem.userid);
-                    refPublic.push({ name: currentItem.addedby, 
-                                     location: currentItem.payee,
-                                     note: currentItem.note,
-                                     photo: currentItem.photo,
-                                     date: currentItem.date,
-                                     likes:'',
-                                     views:'',
-                                     comments:''
-                                  });
-                }
-                //
                 // Update preferences - Last Date Used
                 //
                 var fbAuth = fb.getAuth();
@@ -309,67 +209,6 @@ angular.module('starter.services', [])
                 myUser.update(temp, function () {
                     CurrentUserService.lastdate = temp.lastdate;
                 });
-
-                ////
-                //// Save transaction under category
-                ////
-                //var categoryTransactionRef = fb.child("groups").child(thisGroupId).child("membertransactionsbycategory").child(currentItem.categoryid).child(newChildRef.key());
-                //var categoryTransaction = {
-                //    payee: currentItem.payee,
-                //    amount: currentItem.amount,
-                //    date: currentItem.date,
-                //    type: currentItem.type,
-                //    iscleared: currentItem.iscleared
-                //};
-                //categoryTransactionRef.update(categoryTransaction);
-                ////
-                //// Save transaction under payee
-                ////
-                //var payeeTransactionRef = fb.child("groups").child(thisGroupId).child("membertransactionsbypayee").child(currentItem.payeeid).child(newChildRef.key());
-                //var payeeTransaction = {
-                //    payee: currentItem.payee,
-                //    amount: currentItem.amount,
-                //    date: currentItem.date,
-                //    type: currentItem.type,
-                //    iscleared: currentItem.iscleared
-                //};
-                //payeeTransactionRef.update(payeeTransaction);
-
-
-                //
-                // Save payee-category relationship
-                //
-                var payee = {};
-                var payeeRef = fb.child("members").child(thisMemberId).child("memberpayees").child(currentItem.payeeid);
-                if (currentItem.type === "Income") {
-                    payee = {
-                        lastamountincome: currentItem.amount,
-                        lastcategoryincome: currentItem.category,
-                        lastcategoryidincome: currentItem.categoryid
-                    };
-                } else if (currentItem.type === "Expense") {
-                    payee = {
-                        lastamount: currentItem.amount,
-                        lastcategory: currentItem.category,
-                        lastcategoryid: currentItem.categoryid
-                    };
-                }
-                payeeRef.update(payee);
-
-                if (currentItem.istransfer) {
-                    //
-                    // Save the other transaction, get the transaction id and link it to this transaction
-                    //
-                    OtherTransaction.linkedtransactionid = newChildRef.key();
-                    var othertransRef = fb.child("members").child(thisMemberId).child("transfertransactions").child(otherAccountId);
-                    var sync = $firebaseArray(othertransRef);
-                    sync.$add(OtherTransaction).then(function (otherChildRef) {
-                        //
-                        // Update this transaction with other transaction id
-                        newChildRef.update({ linkedtransactionid: otherChildRef.key() })
-                        //
-                    });
-                }
             },
             deleteTransaction: function () {
                 return alltransactions;
@@ -380,99 +219,6 @@ angular.module('starter.services', [])
                 });
             }
         };
-})
-
-.factory('PayeesService', function ($firebaseArray, $q, myCache) {
-        var ref = {};
-        var allpayees = {};
-        var payeesRef = {};
-        var payeeRef = {};
-        //var transactionsByPayeeRef = {};
-        //var transactionsByCategoryRef = {};
-        var thisGroupId = myCache.get('thisGroupId');
-        var thisMemberId = myCache.get('thisMemberId');
-        return {
-            getPayees: function () {
-                ref = fb.child("members").child(thisMemberId).child("memberpayees").orderByChild('payeesort');
-                allpayees = $firebaseArray(ref);
-                return allpayees;
-            },
-            getPayee: function (payeeid) {
-                var deferred = $q.defer();
-                ref = fb.child("members").child(thisMemberId).child("memberpayees").child(payeeid);
-                ref.once("value", function (snap) {
-                    deferred.resolve(snap.val());
-                });
-                return deferred.promise;
-            },
-            //getTransactionsByPayee: function (payeeid) {
-            //    ref = fb.child("groups").child(thisGroupId).child("membertransactionsbypayee").child(payeeid);
-            //    transactionsByPayeeRef = $firebaseArray(ref);
-            //    return transactionsByPayeeRef;
-            //},
-            //getTransactionsByCategory: function (categoryid) {
-            //    ref = fb.child("groups").child(thisGroupId).child("membertransactionsbycategory").child(categoryid);
-            //    transactionsByCategoryRef = $firebaseArray(ref);
-            //    return transactionsByCategoryRef;
-            //},
-            getPayeesRef: function () {
-                payeesRef = fb.child("members").child(thisMemberId).child("memberpayees");
-                return payeesRef;
-            },
-            getPayeeRef: function (payeeid) {
-                payeeRef = fb.child("members").child(thisMemberId).child("memberpayees").child(payeeid);
-                return payeeRef;
-            },
-            savePayee: function (payee) {
-                allpayees.$save(payee).then(function (ref) {
-                    //ref.key() = payee.$id;
-                });
-            }
-        };
-})
-
-.factory('PayeesFactory', function ($firebaseArray, $q, $timeout, myCache) {
-        var ref = {};
-        var payees = {};
-        var thisGroupId = myCache.get('thisGroupId');
-        var thisMemberId = myCache.get('thisMemberId');
-        ref = fb.child("members").child(thisMemberId).child("memberpayees").orderByChild('payeename');
-        payees = $firebaseArray(ref);
-        var searchPayees = function (searchFilter) {
-            //console.log(searchFilter);
-            var deferred = $q.defer();
-            var matches = payees.filter(function (payee) {
-                if (payee.payeename.toLowerCase().indexOf(searchFilter.toLowerCase()) !== -1) {
-                    return true;
-                }
-            });
-            $timeout(function () {
-                deferred.resolve(matches);
-            }, 100);
-            return deferred.promise;
-        };
-        return {
-            searchPayees: searchPayees
-        }
-})
-
-.service("CategoryTypeService", function () {
-        var cattype = this;
-        cattype.updateType = function (value) {
-            this.typeSelected = value;
-        }
-})
-.service("PickParentCategoryService", function () {
-        var cat = this;
-        cat.updateParentCategory = function (value) {
-            this.parentcategorySelected = value;
-        }
-})
-.service("PickCategoryTypeService", function () {
-        var type = this;
-        type.updateType = function (value) {
-            this.typeSelected = value;
-        }
 })
 
     // Current User
@@ -488,19 +234,6 @@ angular.module('starter.services', [])
             this.isadmin = user.isadmin;
         }
 })
-
-    // Account Pick Lists
-.service("SelectAccountServices", function () {
-        var accountDate = this;
-        var accountType = this;
-        accountDate.updateDate = function (value) {
-            this.dateSelected = value;
-        }
-        accountType.updateType = function (value) {
-            this.typeSelected = value;
-        }
-})
-
     // Transaction Pick Lists
 .service("PickTransactionServices", function () {
         var transactionType = this;
@@ -513,6 +246,7 @@ angular.module('starter.services', [])
         var transAccountTo = this;
         var transPhoto = this;
         var transNote = this;
+        var transTitle = this;
         var transSearch = this;
         transactionType.updateType = function (value, type) {
             this.typeDisplaySelected = value;
@@ -562,6 +296,9 @@ angular.module('starter.services', [])
         }
         transNote.updateNote = function (value) {
             this.noteSelected = value;
+        }
+        transTitle.updateTitle = function (value) {
+            this.titleSelected = value;
         }
         transSearch.updateSearch = function (value) {
             this.searchSelected = value;

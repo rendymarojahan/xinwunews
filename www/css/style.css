@@ -6,6 +6,15 @@ h1 {
     font-size: 42px;
 }
 
+.row {
+    padding: 0;
+    width: 100%;
+    height: 100%;
+}
+*, *:before, *:after {
+    box-sizing: border-box;
+}
+
 /* Directives : MD Label
 ==================================*/
 
@@ -283,6 +292,35 @@ p {
     background: transparent; !important;
 }
 .button-close .icon:before {
+    font-size: 34px;
+}
+
+.button-post {
+    background: white !important;
+    color: #D40A00 !important;
+    z-index: 12 !important;
+    position: absolute !important;
+    top: 48px !important;
+    right: 1%;
+    width: 0px;
+    height: 0px;
+    border-radius: 50% !important;
+    box-shadow: 0 0px 0px 0 rgba(0, 0, 0, 0.26) !important;
+    -webkit-transform: translate3d(0, 0, 0) !important;
+    transform: translate3d(0, 0, 0) !important;
+    -webkit-transition: 0.2s linear !important;
+    transition: 0.2s linear !important;
+    -webkit-transition-property: -webkit-transform, all !important;
+    transition-property: transform, all !important;
+}
+.button-post:hover {
+    -webkit-transform: translate3d(0, -1px, 0) !important;
+    transform: translate3d(0, -1px, 0) !important;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.4) !important;
+    background: #D40A00 !important;
+    color: white !important;
+}
+.button-post .icon:before {
     font-size: 34px;
 }
 
@@ -693,13 +731,6 @@ p {
 
 .item.active, .item.activated, .item-complex.active .item-content, .item-complex.activated .item-content, .item .item-content.active, .item .item-content.activated {
     background-color: transparent;
-}
-
-.list-inset {
-    margin: 20px 30px;
-    border-left: solid 1px #ccc;
-    border-radius: 0;
-    background-color: #fff;
 }
 
 .list .item.item-floating-label,

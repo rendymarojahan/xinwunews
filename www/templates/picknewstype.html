@@ -1,0 +1,11 @@
+<ion-view view-title="Select News Type">
+    <ion-content>
+        <ion-radio-fix class="customItemSize"
+                       ng-repeat="item in NewsTypeList"
+                       ng-value="item.value"
+                       ng-change="itemchanged(item)"
+                       ng-model="currentItem.typedisplay">
+            {{ item.text }}
+        </ion-radio-fix>
+    </ion-content>
+</ion-view>

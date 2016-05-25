@@ -1,0 +1,21 @@
+<ion-view view-title="Notes">
+    <ion-nav-buttons side="right">
+        <button class="button button-clear customHeaderSize" ng-click="saveNote()">Done</button>
+    </ion-nav-buttons>
+    <div class="bar bar-subheader CustomSubHeader">
+        <div class="row center">
+            <div class="col netWorthRow"><span>Enter a title for this posting</span></div>
+        </div>
+    </div>
+    <ion-content class="has-header has-subheader">
+        <div class="row">
+            <div class="col">
+                <div class="list list-inset">
+                    <label class="item item-input text">
+                        <textarea placeholder="" rows="5" ng-model="$parent.title" name="title" focus-me></textarea>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </ion-content>
+</ion-view>
