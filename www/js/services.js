@@ -128,6 +128,14 @@ angular.module('starter.services', [])
                 ref = fb.child("publics").child(thisPublicId).child(thisUserId);
                 return ref;
             },
+            getPost: function (postid) {
+                var deferred = $q.defer();
+                ref = fb.child("postings").child(postid);
+                ref.once("value", function (snap) {
+                    deferred.resolve(snap.val());
+                });
+                return deferred.promise;
+            },
             getNews: function () {
                 ref = fb.child("postings");
                 publicRef = $firebaseArray(ref);

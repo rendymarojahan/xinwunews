@@ -6,6 +6,11 @@ h1 {
     font-size: 42px;
 }
 
+h4, .h4 {
+    font-size: 18px;
+    color: white;
+}
+
 .row {
     padding: 0;
     width: 100%;

@@ -1,0 +1,30 @@
+<ion-view view-title="News">
+    <ion-content ng-class="{expanded:$scope.isExpanded}">
+        <div class="hero slide-up">
+        <img src="data:image/jpeg;base64,{{ photo }}"></img>
+        </div>
+        <div class="tabs tabs-dark tabs-icon-top static">
+            <h4>{{ title }}</h4>
+        </div>
+        <strong class="content padding double-padding-x">{{ typedisplay }}</strong>
+        <p class="content padding double-padding-x">{{ note }}</p>
+
+        <div class="list animate-fade-slide-in-right">
+            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
+                <img src="img/jon-snow.jpg">
+                <h2>Jon Snow</h2>
+                <p>Da illest illegitimate</p>
+            </a>
+            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
+                <img src="img/jon-snow.jpg">
+                <h2>Jon Snow</h2>
+                <p>Da illest illegitimate</p>
+            </a>
+            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
+                <img src="img/jon-snow.jpg">
+                <h2>Jon Snow</h2>
+                <p>Da illest illegitimate</p>
+            </a>
+        </div>
+    </ion-content>
+</ion-view>

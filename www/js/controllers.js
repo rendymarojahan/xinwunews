@@ -140,8 +140,8 @@ angular.module('starter.controllers', [])
     };
 
     $scope.listCanSwipe = true;
-    $scope.handleSwipeOptions = function ($event, news) {
-        $state.go('app.post', { postId: news.$id });
+    $scope.handleSwipeOptions = function ($event, post) {
+        $state.go('app.post', { postId: post.$id });
     };
 
 	$scope.isadmin = CurrentUserService.isadmin;
@@ -183,7 +183,6 @@ angular.module('starter.controllers', [])
         'isphoto': false,
         'title': '',
         'note': '',
-        'payee': '',
         'photo': '',
         'comments': '',
         'likes': '',
@@ -292,7 +291,7 @@ angular.module('starter.controllers', [])
 				console.log('CANCELLED');
 			}
 		});	
-	}
+	 }
     // PICK TRANSACTION TYPE
     // Don't let users change the transaction type. If needed, a user can delete the transaction and add a new one
     $scope.pickNewsType = function () {
@@ -364,7 +363,7 @@ angular.module('starter.controllers', [])
         }
 
         // Format date
-        $scope.currentItem.date = Date.now();
+        $scope.currentItem.date = new Date();
         if (typeof $scope.currentItem.date === 'undefined' || $scope.currentItem.date === '') {
             $scope.hideValidationMessage = false;
             $scope.validationMessage = "Please select a date for this transaction"
@@ -418,6 +417,50 @@ angular.module('starter.controllers', [])
         $scope.currentItem = {};
         $ionicHistory.goBack();
     }
+})
+
+.controller('PostCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+
+  $scope.posts = [];
+    $scope.userId = myCache.get('thisMemberId');
+    $scope.photo = {
+        userid: ''
+    };
+
+    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        if (fromState.name === "app.post") {
+            refresh($scope.posts, $scope, NewsFactory);
+        }
+    });
+
+    NewsFactory.getPost($stateParams.postId).then(function (post) {
+      $scope.title = post.title;
+      $scope.date = post.date;
+      $scope.note = post.note;
+      $scope.typedisplay = post.typedisplay;
+      $scope.photo = post.photo;
+      $scope.likes = post.likes;
+      $scope.comments = post.comments;
+    });
+
+    
+
+    $scope.doRefresh = function (){
+
+      $scope.posts = NewsFactory.getPost($stateParams.postId);
+      scope.posts.$loaded().then(function (x) {
+      refresh($scope.news, $scope, NewsFactory, $stateParams.postId);
+          $scope.$broadcast('scroll.refreshComplete');
+      }).catch(function (error) {
+          console.error("Error:", error);
+      });
+
+    };
+
+    function refresh(posts, $scope, NewsFactory) {
+    
+    }
+
 })
 
 .controller('NewsTypeCtrl', function ($scope, $ionicHistory, PickTransactionServices) {

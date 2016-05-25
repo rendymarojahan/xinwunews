@@ -13,13 +13,14 @@
                 <div  class="card stable-bg ink ink-dark">
                     <div class="item item-avatar item-text-wrap">
                         <span class="avatar"><img src="data:image/jpeg;base64,{{ post.photo }}"></img></span>
-                        <strong ng-click="handleSwipeOptions($event, news)">{{ post.title }}</strong> {{ post.note }}
+                        <strong ng-click="handleSwipeOptions($event, post)">{{ post.title }}</strong><br> 
+                        <span>{{ post.note }}</span>
                         <a ng-if="isshow" class="image"><img src="data:image/jpeg;base64,{{ post.photo }}"></a>
                         <div class="card-footer text-right">
                             <i class="icon ion-chatbubble positive"></i> {{ post.comments }}
                             <i class="icon ion-heart assertive"></i> {{ post.likes }}
                             <div class="pull-left">
-                                <i class="icon ion-clock"></i> {{ post.date }}
+                                <i class="icon ion-clock"></i>{{ post.date| amCalendar:referenceTime:formats }} ago
                             </div>
                         </div>
                     </div>
