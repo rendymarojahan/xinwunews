@@ -8,8 +8,7 @@
   <ion-content>
   <ion-refresher pulling-text="Pull to refresh" refreshing-text="Loading..." refreshing-icon="ion-loading-c" pulling-icon="ion-ios7-arrow-thin-down" on-refresh="doRefresh()">
   </ion-refresher>
-        <div collection-repeat="post in news | orderBy:'-date'">
-            <div class="item card-item">
+            <div class="item card-item" ng-repeat="post in news | orderBy:'-date'">
                 <div  class="card stable-bg ink ink-dark">
                     <div class="item item-avatar item-text-wrap">
                         <span class="avatar"><img src="data:image/jpeg;base64,{{ post.photo }}"></img></span>
@@ -26,6 +25,5 @@
                     </div>
                 </div>
             </div>
-        </div>
   </ion-content>
 </ion-view>
