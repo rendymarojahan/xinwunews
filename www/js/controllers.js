@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout, $rootScope, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
+.controller('AppCtrl', function($scope, $ionicModal, $timeout, $rootScope, $firebaseAuth, $cordovaOauth, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
 
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
@@ -8,6 +8,44 @@ angular.module('starter.controllers', [])
   // listen for the $ionicView.enter event:
   //$scope.$on('$ionicView.enter', function(e) {
   //});
+
+  var auth = $firebaseAuth(fb);
+ 
+  $scope.loginGoogle = function() {
+      $cordovaOauth.google("650716399232-al2qqn4rut5sd3qsmt5hrtbfpc932pb0.apps.googleusercontent.com", ["https://www.googleapis.com/auth/urlshortener", "https://www.googleapis.com/auth/userinfo.email", 
+      "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/plus.me"]).then(function(result) {
+          auth.$authWithOAuthToken("google", result.access_token).then(function(authData) {
+              console.log("google login success");
+              console.log(JSON.stringify(authData));
+              $http({method:"GET", url:"https://www.googleapis.com/plus/v1/people/me?access_token="+result.access_token}).
+                success(function(response){
+                         console.log(response);
+                        var param = {
+                          provider: 'google',
+                            google: {
+                                          uid: response["id"],
+                                          provider: 'google',
+                                          first_name: response["name"]["givenName"],
+                                          last_name: response["name"]["familyName"],
+                                          email: response.emails[0]["value"],
+                                          image: response.image.url
+                                      }
+                          };
+                          console.log(param);
+                }, function(error) {
+                  console.log(error);
+                });
+              $scope.modal.hide();
+              $state.reload('app.news');
+          }, function(error) {
+              console.error("ERROR: " + error);
+          });
+      }, function(error) {
+          console.log("ERROR: " + error);
+      });
+  }
+
+
   $scope.user = {};
   $scope.doLogin = function(user) {
     $ionicLoading.show({
@@ -35,10 +73,10 @@ angular.module('starter.controllers', [])
                 MembersFactory.getMember(authData).then(function (thisuser) {
 
                 	$scope.firstname = thisuser.firstname;
-    				$scope.surename = thisuser.surename;
-    				$scope.fullname = function (){
-    					return $scope.firstname +" "+ $scope.surename;
-    				};
+          				$scope.surename = thisuser.surename;
+          				$scope.fullname = function (){
+          					return $scope.firstname +" "+ $scope.surename;
+          				};
                     
                     /* Save user data for later use */
                     myCache.put('thisGroupId', thisuser.group_id);
@@ -254,8 +292,8 @@ angular.module('starter.controllers', [])
             				};
 				            $cordovaCamera.getPicture(options).then(function (imageData) {
 				                $scope.currentItem.photo = imageData;
-								PickTransactionServices.updatePhoto($scope.currentItem.photo);
-								$scope.currentItem.isphoto = true;
+        								PickTransactionServices.updatePhoto($scope.currentItem.photo);
+        								$scope.currentItem.isphoto = true;
 				            }, function (error) {
 				                console.error(error);
 				            })
@@ -409,6 +447,9 @@ angular.module('starter.controllers', [])
             $scope.inEditMode = false;
             //
         } else {
+            $scope.currentItem.likes = '';
+            $scope.currentItem.comments = '';
+            $scope.currentItem.date = Firebase.ServerValue.TIMESTAMP;
             $scope.currentItem.addedby = myCache.get('thisUserName');
             $scope.currentItem.userid = myCache.get('thisMemberId');
             //

@@ -15,12 +15,12 @@
                         <strong ng-click="handleSwipeOptions($event, post)">{{ post.title }}</strong><br> 
                         <span>{{ post.note }}</span>
                         <a ng-if="isshow" class="image"><img src="data:image/jpeg;base64,{{ post.photo }}"></a>
-                        <div class="card-footer text-right">
+                        <div class="card-footer text-left">
+                                <i class="pull-left icon ion-clock"></i>{{ post.date| amCalendar:referenceTime:formats }}
+                        </div>
+                        <div class="card-footer text-left">
                             <i class="icon ion-chatbubble positive"></i> {{ post.comments }}
                             <i class="icon ion-heart assertive"></i> {{ post.likes }}
-                            <div class="pull-left">
-                                <i class="icon ion-clock"></i>{{ post.date| amCalendar:referenceTime:formats }} ago
-                            </div>
                         </div>
                     </div>
                 </div>
