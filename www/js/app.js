@@ -53,6 +53,75 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
     }
   })
 
+  .state('app.manage', {
+    url: '/manage',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/manage.html'
+      }
+    }
+  })
+
+  .state('app.profile', {
+    url: '/profile',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/profile.html',
+        controller: 'ProfileCtrl'
+      }
+    }
+  })
+
+  .state('app.admin', {
+    url: '/admin',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/admin.html',
+        controller: 'AdminCtrl'
+      }
+    }
+  })
+
+  .state('app.mnews', {
+    url: '/mnews',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/mnews.html',
+        controller: 'MnewsCtrl'
+      }
+    }
+  })
+
+  .state('app.mtutorial', {
+    url: '/mtutorial',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/mtutorial.html',
+        controller: 'MtutorialCtrl'
+      }
+    }
+  })
+
+  .state('app.mtips', {
+    url: '/mtips',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/mtips.html',
+        controller: 'MtipsCtrl'
+      }
+    }
+  })
+
+  .state('app.about', {
+    url: '/about',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/about.html',
+        controller: 'AboutCtrl'
+      }
+    }
+  })
+
   .state('app.posting', {
     url: '/posting',
     views: {

@@ -1,0 +1,32 @@
+<ion-view style="" title="Edit Profile">
+    <ion-content class="has-header" padding="true">
+        <figure class="snip0057 red">
+          <figcaption>
+            <h2>{{ firstname }} <span>{{ surename }}</span></h2>
+            <p>{{ note }}</p>
+            <div class="icons"><a ng-click="doAction()"><i class="ion-ios-camera" ></i></a></div>
+          </figcaption>
+          <div ng-if="!isphoto" class="image"><img src="data:image/jpeg;base64,{{ photo }}" alt="sample4"/></div>
+          <div ng-if="isphoto" class="image"><img src="data:image/jpeg;base64,{{ currentItem.photo }}" alt="sample4"/></div>
+        </figure>
+        <div style="" class="button-bar family">
+        </div>
+        <div style="">
+            <form style="" class="list">
+                <label style="" name="name" class="item item-input">
+                    <input placeholder="{{ firstname }}" type="text" ng-model="user.firstname">
+                </label>
+                <label style="" name="name" class="item item-input">
+                    <input placeholder="{{ surename }}" type="text" ng-model="user.surename">
+                </label>
+                <label style="" name="phone" class="item item-input">
+                    <input placeholder="{{ phone }}" type="tel" ng-model="user.phone">
+                </label>
+                <div style="width: 283px; height: 46px;" class="spacer"></div>
+            </form>
+            <button class="button button-float" ng-click="createMember(user)">
+            <i class="icon ion-ios-person-outline"></i>
+            </button>
+        </div>
+    </ion-content>
+</ion-view>

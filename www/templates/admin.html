@@ -1,0 +1,36 @@
+<ion-view style="" title="Add Admin">
+    <ion-content class="has-header" overflow-scroll="false" padding="true">
+        <div style="background-color: rgb(255, 255, 255); border: 1px solid rgb(238, 238, 238); border-radius: 3px; text-align: center;">
+            <img ng-show="currentItem.photo !== undefined" ng-src="data:image/jpeg;base64,{{currentItem.photo}}" height="auto" width="100%" ng-model="user.picture">
+            <img ng-show="currentItem.photo === undefined" ng-src="img/register.jpg" ng-model="user.picture">
+            <button ng-click="doAction()" class="button button-register">
+                <i class="icon ion-ios-camera-outline"></i>
+            </button>
+        </div>
+        <form style="" class="list">
+            <ion-item style="" class="item-divider">Basic Information</ion-item>
+            <label style="" name="name" class="item item-input">
+                <input placeholder="First Name" type="text" ng-model="user.firstname">
+            </label>
+            <label style="" name="name" class="item item-input">
+                <input placeholder="Surename" type="text" ng-model="user.surename">
+            </label>
+            <label style="" name="email" class="item item-input">
+                <input placeholder="Email" type="email" ng-model="user.email">
+            </label>
+            <label style="" name="password" class="item item-input">
+                <input placeholder="Password" type="password" ng-model="user.password">
+            </label>
+            <label style="" name="phone" class="item item-input">
+                <input placeholder="Phone" type="tel" ng-model="user.phone">
+            </label>
+            <label style="" name="birthday" class="item item-input">
+                <input placeholder="Birthday" type="date" ng-model="user.birthday">
+            </label>
+            <div style="width: 283px; height: 46px;" class="spacer"></div>
+        </form>
+        <button class="button button-float" ng-click="createMember(user)">
+        <i class="icon ion-ios-person-outline"></i>
+        </button>
+    </ion-content>
+</ion-view>

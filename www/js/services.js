@@ -24,6 +24,14 @@ angular.module('starter.services', [])
                 });
                 return deferred.promise;
             },
+            updateMember: function (userId) {
+                var deferred = $q.defer();
+                var memberRef = ref.child(userId);
+                memberRef.once("value", function (snap) {
+                    deferred.resolve(snap.val());
+                });
+                return deferred.promise;
+            },
             getMemberByCode: function (thisGroup) {
                 var deferred = $q.defer();
                 var matches = members.filter(function (member) {
@@ -276,6 +284,8 @@ angular.module('starter.services', [])
             this.lastdate = user.lastdate;
             this.photo = user.photo;
             this.isadmin = user.isadmin;
+            this.birthday = user.birthday;
+            this.phone = user.phone;
         }
 })
     // Transaction Pick Lists
