@@ -137,10 +137,28 @@ angular.module('starter.services', [])
                 return deferred.promise;
             },
             getNews: function () {
-                ref = fb.child("postings");
+                ref = fb.child("postings").child("News");
                 publicRef = $firebaseArray(ref);
                 return publicRef;
-            }
+            },
+            getTutorial: function () {
+                ref = fb.child("postings").child("Tutorial");
+                publicRef = $firebaseArray(ref);
+                return publicRef;
+            },
+            getTips: function () {
+                ref = fb.child("postings").child("Tips");
+                publicRef = $firebaseArray(ref);
+                return publicRef;
+            },
+            getNew: function () {
+                var deferred = $q.defer();
+                ref = fb.child("postings");
+                ref.on("child_added", function (snap) {
+                    deferred.resolve(snap.val());
+                });
+                return deferred.promise;
+            },
             
             
         };
@@ -204,8 +222,26 @@ angular.module('starter.services', [])
                 });
             },
             createPosting: function (currentItem) {
-                var ref = fb.child("postings");
-                var newChildRef = ref.push(currentItem);
+                if (currentItem.typedisplay === "News") {
+                    var ref = fb.child("postings").child("News");
+                    var newChildRef = ref.push(currentItem);
+                } else if (currentItem.typedisplay === "Tutorial") {
+                    var ref = fb.child("postings").child("Tutorial");
+                    var newChildRef = ref.push(currentItem);
+                } else if (currentItem.typedisplay === "Tips") {
+                    var ref = fb.child("postings").child("Tips");
+                    ref.push({   name: currentItem.addedby, 
+                                 title: currentItem.title,
+                                 userid: currentItem.userid,
+                                 note: currentItem.note,
+                                 photo: CurrentUserService.photo,
+                                 date: currentItem.date,
+                                 likes:'',
+                                 isphoto:currentItem.isphoto,
+                                 comments:''
+                              });
+                }
+                
                 // Update preferences - Last Date Used
                 //
                 var fbAuth = fb.getAuth();
@@ -253,6 +289,7 @@ angular.module('starter.services', [])
         var transAccountFrom = this;
         var transAccountTo = this;
         var transPhoto = this;
+        var transVideo = this;
         var transNote = this;
         var transTitle = this;
         var transSearch = this;
@@ -301,6 +338,9 @@ angular.module('starter.services', [])
         }
         transPhoto.updatePhoto = function (value) {
             this.photoSelected = value;
+        }
+        transVideo.updateVideo = function (value) {
+            this.videoSelected = value;
         }
         transNote.updateNote = function (value) {
             this.noteSelected = value;

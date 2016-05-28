@@ -99,6 +99,13 @@ angular.module('starter.controllers', [])
         });
   }
 
+  $scope.isadmin = CurrentUserService.isadmin;
+    $scope.$on('$ionicView.beforeEnter', function () {
+        if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
+            $scope.isadmin = CurrentUserService.isadmin;
+    }
+  });
+
   // Form data for the login modal
   $scope.loginData = {};
 
@@ -136,6 +143,7 @@ angular.module('starter.controllers', [])
 
 .controller('NewsCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
 	$scope.news = [];
+  $scope.new = [];
 	$scope.isshow = false;
     $scope.userId = myCache.get('thisMemberId')
     $scope.photo = CurrentUserService.photo;
@@ -147,22 +155,22 @@ angular.module('starter.controllers', [])
     });
 
     $scope.news = NewsFactory.getNews();
-    $scope.news.$loaded().then(function (x) {
-    	refresh($scope.news, $scope, NewsFactory);
-    }).catch(function (error) {
-        console.error("Error:", error);
+      $scope.news.$loaded().then(function (x) {
+      	refresh($scope.news, $scope, NewsFactory);
+      }).catch(function (error) {
+          console.error("Error:", error);
     });
 
     $scope.doRefresh = function (){
 
-    	$scope.new = NewsFactory.getNews();
-	    $scope.new.$loaded().then(function (x) {
-			$scope.news = $scope.new.concat($scope.news);
-	        refresh($scope.news, $scope, NewsFactory);
-	        $scope.$broadcast('scroll.refreshComplete');
-	    }).catch(function (error) {
-	        console.error("Error:", error);
-	    });
+    	$scope.news = NewsFactory.getNews();
+      $scope.news.$loaded().then(function (x) {
+        $scope.news = $scope.new.concat($scope.news);
+        refresh($scope.news, $scope, NewsFactory);
+        $scope.$broadcast('scroll.refreshComplete');
+      }).catch(function (error) {
+        console.error("Error:", error);
+      });
 
     };
 
@@ -186,6 +194,78 @@ angular.module('starter.controllers', [])
   	$scope.$on('$ionicView.beforeEnter', function () {
         if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
             $scope.isadmin = CurrentUserService.isadmin;
+    }
+  });
+
+    $scope.createPosting = function () {
+        PickTransactionServices.typeDisplaySelected = '';
+        PickTransactionServices.typeInternalSelected = '';
+        PickTransactionServices.dateSelected = '';
+        PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+        PickTransactionServices.noteSelected = '';
+        PickTransactionServices.titleSelected = '';
+        PickTransactionServices.videoSelected = '';
+        $state.go('app.posting');
+    }
+
+    function refresh(news, $scope, NewsFactory) {
+    
+    }
+})
+
+.controller('TutorialCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+  $scope.news = [];
+  $scope.new = [];
+  $scope.isshow = false;
+    $scope.userId = myCache.get('thisMemberId')
+    $scope.photo = CurrentUserService.photo;
+
+    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        if (fromState.name === "app.news") {
+            refresh($scope.news, $scope, NewsFactory);
+        }
+    });
+
+    $scope.news = NewsFactory.getTutorial();
+    $scope.news.$loaded().then(function (x) {
+      refresh($scope.news, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+    });
+
+    $scope.doRefresh = function (){
+
+      $scope.news = NewsFactory.getTutorial();
+      $scope.news.$loaded().then(function (x) {
+        $scope.news = $scope.new.concat($scope.news);
+        refresh($scope.news, $scope, NewsFactory);
+        $scope.$broadcast('scroll.refreshComplete');
+      }).catch(function (error) {
+        console.error("Error:", error);
+      });
+
+    };
+
+    var filterBarInstance;
+    $scope.showFilterBar = function () {
+        filterBarInstance = $ionicFilterBar.show({
+            items: $scope.news,
+            update: function (filteredItems, filterText) {
+                $scope.news = filteredItems;
+            },
+            filterProperties: 'title'
+        });
+    };
+
+    $scope.listCanSwipe = true;
+    $scope.handleSwipeOptions = function ($event, post) {
+        $state.go('app.post', { postId: post.$id });
+    };
+
+  $scope.isadmin = CurrentUserService.isadmin;
+    $scope.$on('$ionicView.beforeEnter', function () {
+        if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
+            $scope.isadmin = CurrentUserService.isadmin;
         }
     });
 
@@ -196,6 +276,79 @@ angular.module('starter.controllers', [])
         PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
         PickTransactionServices.noteSelected = '';
         PickTransactionServices.titleSelected = '';
+        PickTransactionServices.videoSelected = '';
+        $state.go('app.posting');
+    }
+
+    function refresh(news, $scope, NewsFactory) {
+    
+    }
+})
+
+.controller('TipsCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+  $scope.news = [];
+  $scope.new = [];
+  $scope.isshow = false;
+    $scope.userId = myCache.get('thisMemberId')
+    $scope.photo = CurrentUserService.photo;
+
+    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+        if (fromState.name === "app.news") {
+            refresh($scope.news, $scope, NewsFactory);
+        }
+    });
+
+    $scope.news = NewsFactory.getTips();
+    $scope.news.$loaded().then(function (x) {
+      refresh($scope.news, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+    });
+
+    $scope.doRefresh = function (){
+
+      $scope.news = NewsFactory.getTips();
+      $scope.news.$loaded().then(function (x) {
+        $scope.news = $scope.new.concat($scope.news);
+        refresh($scope.news, $scope, NewsFactory);
+        $scope.$broadcast('scroll.refreshComplete');
+      }).catch(function (error) {
+        console.error("Error:", error);
+      });
+
+    };
+
+    var filterBarInstance;
+    $scope.showFilterBar = function () {
+        filterBarInstance = $ionicFilterBar.show({
+            items: $scope.news,
+            update: function (filteredItems, filterText) {
+                $scope.news = filteredItems;
+            },
+            filterProperties: 'title'
+        });
+    };
+
+    $scope.listCanSwipe = true;
+    $scope.handleSwipeOptions = function ($event, post) {
+        $state.go('app.post', { postId: post.$id });
+    };
+
+  $scope.isadmin = CurrentUserService.isadmin;
+    $scope.$on('$ionicView.beforeEnter', function () {
+        if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
+            $scope.isadmin = CurrentUserService.isadmin;
+        }
+    });
+
+    $scope.createPosting = function () {
+        PickTransactionServices.typeDisplaySelected = '';
+        PickTransactionServices.typeInternalSelected = '';
+        PickTransactionServices.dateSelected = '';
+        PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+        PickTransactionServices.noteSelected = '';
+        PickTransactionServices.titleSelected = '';
+        PickTransactionServices.videoSelected = '';
         $state.go('app.posting');
     }
 
@@ -222,6 +375,7 @@ angular.module('starter.controllers', [])
         'title': '',
         'note': '',
         'photo': '',
+        'video': '',
         'comments': '',
         'likes': '',
         'typedisplay': ''
@@ -245,6 +399,8 @@ angular.module('starter.controllers', [])
         }
         $scope.currentItem.title = PickTransactionServices.titleSelected;
         $scope.currentItem.note = PickTransactionServices.noteSelected;
+        $scope.video = "https://www.youtube.com/embed/";
+        $scope.currentItem.video = $scope.video+PickTransactionServices.videoSelected;
         // Handle transaction date
         if (typeof PickTransactionServices.dateSelected !== 'undefined' && PickTransactionServices.dateSelected !== '') {
             $scope.DisplayDate = PickTransactionServices.dateSelected;
@@ -528,6 +684,18 @@ angular.module('starter.controllers', [])
 
 })
 
+.controller('NewsVideoCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+
+    if (typeof PickTransactionServices.videoSelected !== 'undefined' && PickTransactionServices.videoSelected !== '') {
+        $scope.video = PickTransactionServices.videoSelected;
+    }
+    $scope.saveVideo = function () {
+        PickTransactionServices.updateVideo($scope.video);
+        $ionicHistory.goBack();
+    };
+
+})
+
 .controller('NewsContentCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
 
     if (typeof PickTransactionServices.noteSelected !== 'undefined' && PickTransactionServices.noteSelected !== '') {
@@ -538,7 +706,4 @@ angular.module('starter.controllers', [])
         $ionicHistory.goBack();
     };
 
-})
-
-.controller('PlaylistCtrl', function($scope, $stateParams) {
 });

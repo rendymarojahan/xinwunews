@@ -22,7 +22,18 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
   });
 })
 
-.config(function($stateProvider, $urlRouterProvider) {
+.config(function($stateProvider, $urlRouterProvider, $sceDelegateProvider) {
+
+  $sceDelegateProvider.resourceUrlWhitelist([
+     // Allow same origin resource loads.
+     'self',
+     // Allow loading from our assets domain.  Notice the difference between * and **.
+     'https://www.youtube.com/embed/**']);
+
+   // The blacklist overrides the whitelist so the open redirect here is blocked.
+  $sceDelegateProvider.resourceUrlBlacklist([
+     'http://myapp.example.com/clickThru**']);
+
   $stateProvider
 
     .state('app', {
@@ -82,6 +93,16 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
     }
   })
 
+  .state('app.newsvideo', {
+    url: '/newsvideo',
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/newsvideo.html',
+        controller: 'NewsVideoCtrl'
+      }
+    }
+  })
+
   .state('app.post', {
     url: "/post/:postId",
     views: {
@@ -96,7 +117,8 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
       url: '/tutorial',
       views: {
         'menuContent': {
-          templateUrl: 'templates/tutorial.html'
+          templateUrl: 'templates/tutorial.html',
+          controller: 'TutorialCtrl'
         }
       }
     })
@@ -105,7 +127,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
       views: {
         'menuContent': {
           templateUrl: 'templates/tips.html',
-          controller: 'PlaylistsCtrl'
+          controller: 'TipsCtrl'
         }
       }
     })

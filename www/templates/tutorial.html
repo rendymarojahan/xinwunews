@@ -1,77 +1,26 @@
 <ion-view view-title="Tutorial">
+	<button ng-if="isadmin" class="button button-float" ng-click="createPosting()">
+        <i class="icon ion-plus-round"></i>
+    </button>
     <ion-content ng-class="{expanded:isExpanded}" class="animate-fade-slide-in">
+    <ion-refresher pulling-text="Pull to refresh" refreshing-text="Loading..." refreshing-icon="ion-loading-c" pulling-icon="ion-ios7-arrow-thin-down" on-refresh="doRefresh()">
+  	</ion-refresher>
         <div class="list half">
-            <div ui-sref="app.profile" class="card card-gallery item item-text-wrap">
+            <div class="card card-gallery item item-text-wrap" ng-repeat="post in news | orderBy:'-date'">
                 <div class="ink dark-bg">
-                    <h2>10 Self Defending</h2>
+                    <h2>{{ post.title }}</h2>
                     <div class="video-container">
-	                    <iframe src="https://www.youtube.com/embed/EVJKpg3cJ1w" frameborder="0" width="560" height="315"></iframe>
+	                    <iframe src='{{ post.video }}' frameborder="0" width="560" height="315"></iframe>
 	                </div>
                 </div>
                 <div class="item tabs tabs-secondary tabs-icon-left">
                     <a class="tab-item stable-bg assertive">
                         <i class="icon ion-heart"></i>
-                        4
+                        {{ post.likes }}
                     </a>
-                    <a class="tab-item stable-bg positive-900">
+                    <a class="tab-item stable-bg royal">
                         <i class="icon ion-chatbubbles"></i>
-                        2
-                    </a>
-                </div>
-            </div>
-            <div ui-sref="app.profile" class="card card-gallery item item-text-wrap">
-                <div class="ink dark-bg">
-                    <h2>How To Win Every Fight</h2>
-                    <div class="video-container">
-	                    <iframe src="https://www.youtube.com/embed/9lb45iLV5Uw" frameborder="0" width="560" height="315"></iframe>
-	                </div>
-                </div>
-                <div class="item tabs tabs-secondary tabs-icon-left">
-                    <a class="tab-item stable-bg assertive">
-                        <i class="icon ion-heart"></i>
-                        6
-                    </a>
-                    <a class="tab-item stable-bg positive-900">
-                        <i class="icon ion-chatbubbles"></i>
-                        1
-                    </a>
-                </div>
-            </div>
-        </div>
-        <div class="list half">
-            <div ui-sref="app.profile" class="card card-gallery item item-text-wrap">
-                <div class="ink dark-bg">
-                    <h2>Muay Thai</h2>
-                    <div class="video-container">
-	                    <iframe src="http://www.youtube.com/embed/crAQL-dXjcw" frameborder="0" width="560" height="315"></iframe>
-	                </div>
-                </div>
-                <div class="item tabs tabs-secondary tabs-icon-left">
-                    <a class="tab-item stable-bg assertive">
-                        <i class="icon ion-heart"></i>
-                        22
-                    </a>
-                    <a class="tab-item stable-bg positive-900">
-                        <i class="icon ion-chatbubbles"></i>
-                        9
-                    </a>
-                </div>
-            </div>
-            <div ui-sref="app.profile" class="card card-gallery item item-text-wrap">
-                <div class="ink dark-bg">
-                    <h2>Triangle Choke</h2>
-                    <div class="video-container">
-	                    <iframe src="http://www.youtube.com/embed/NhpSHRjqpos" frameborder="0" width="560" height="315"></iframe>
-	                </div>
-                </div>
-                <div class="item tabs tabs-secondary tabs-icon-left">
-                    <a class="tab-item stable-bg assertive">
-                        <i class="icon ion-heart"></i>
-                        8
-                    </a>
-                    <a class="tab-item stable-bg positive-900">
-                        <i class="icon ion-chatbubbles"></i>
-                        0
+                        {{ post.Comments }}
                     </a>
                 </div>
             </div>

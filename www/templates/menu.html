@@ -27,8 +27,14 @@
         <ion-item menu-close href="#/app/tips">
           Tips
         </ion-item>
-        <ion-item menu-close href="" ng-click="login()">
+        <ion-item ng-if="isadmin" menu-close href="#/app/tips">
+          Manage Data
+        </ion-item>
+        <ion-item ng-if="!isadmin" menu-close href="" ng-click="login()">
           Xinwu
+        </ion-item>
+        <ion-item ng-if="isadmin" menu-close href="#/app/tips">
+          Logout
         </ion-item>
       </ion-list>
     </ion-content>

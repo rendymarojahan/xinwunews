@@ -687,10 +687,9 @@ p {
 
 .list.half {
     display: inline-block;
-    float: left;
     margin: 0;
     padding: 0;
-    width: 50%;
+    width: 100%;
 }
 .list.half:first-child {
     padding: 16px 8px 16px 16px;
@@ -725,6 +724,7 @@ p {
 }
 .list .card.card-gallery.item h2 {
     padding: 12px;
+    color: #FFF;
 }
 .list .item.item-gallery {} .list .item.item-gallery img {
                                 width: 100%;

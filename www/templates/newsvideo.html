@@ -1,10 +1,10 @@
-<ion-view view-title="Title">
+<ion-view view-title="Video">
     <ion-nav-buttons side="right">
-        <button class="button button-clear customHeaderSize" ng-click="saveNote()">Done</button>
+        <button class="button button-clear customHeaderSize" ng-click="saveVideo()">Done</button>
     </ion-nav-buttons>
     <div class="bar bar-subheader CustomSubHeader">
         <div class="row center">
-            <div class="col netWorthRow"><span>Enter a title for this posting</span></div>
+            <div class="col netWorthRow"><span>Enter a unique id youtube video</span></div>
         </div>
     </div>
     <ion-content class="has-header has-subheader">
@@ -12,7 +12,7 @@
             <div class="col">
                 <div class="list list-inset">
                     <label class="item item-input text">
-                        <textarea placeholder="" rows="5" ng-model="$parent.title" name="title" focus-me></textarea>
+                        <textarea placeholder="" rows="5" ng-model="$parent.video" name="video" focus-me></textarea>
                     </label>
                 </div>
             </div>
