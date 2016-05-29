@@ -129,20 +129,31 @@ angular.module('starter.services', [])
 .factory('NewsFactory', function ($firebaseArray, $q, myCache, MembersFactory, CurrentUserService) {
         var ref = {};
         var publicRef = {};
+        var likes = {};
+        var comments = {};
         var thisPublicId = CurrentUserService.public_id;
         var thisUserId = myCache.get('thisMemberId');
         return {
             ref: function () {
-                ref = fb.child("publics").child(thisPublicId).child(thisUserId);
+                ref = fb.child("postings").child("Tips");
                 return ref;
             },
             getPost: function (postid) {
                 var deferred = $q.defer();
-                ref = fb.child("postings").child(postid);
+                ref = fb.child("postings").child("News").child(postid);
                 ref.once("value", function (snap) {
                     deferred.resolve(snap.val());
                 });
                 return deferred.promise;
+            },
+            getNewsComments: function (postid) {
+                ref = fb.child("postings").child("News").child(postid).child("commentars");
+                comments = $firebaseArray(ref);
+                return comments;
+            },
+            createComment: function (postid, postcomment) {
+                var ref = fb.child("postings").child("News").child(postid).child("commentars");
+                ref.push(postcomment);
             },
             getNews: function () {
                 ref = fb.child("postings").child("News");
@@ -167,6 +178,54 @@ angular.module('starter.services', [])
                 });
                 return deferred.promise;
             },
+            getPosting: function (postingid) {
+                var thisPosting = publicRef.$getRecord(postingid);
+                return thisPosting;
+            },
+            createPosting: function (currentItem) {
+                if (currentItem.typedisplay === "News") {
+                    var ref = fb.child("postings").child("News");
+                    var newChildRef = ref.push(currentItem);
+                } else if (currentItem.typedisplay === "Tutorial") {
+                    var ref = fb.child("postings").child("Tutorial");
+                    var newChildRef = ref.push(currentItem);
+                } else if (currentItem.typedisplay === "Tips") {
+                    var ref = fb.child("postings").child("Tips");
+                    ref.push({   name: currentItem.addedby,
+                                 typedisplay: currentItem.typedisplay, 
+                                 title: currentItem.title,
+                                 userid: currentItem.userid,
+                                 note: currentItem.note,
+                                 photo: CurrentUserService.photo,
+                                 date: currentItem.date,
+                                 likes:'',
+                                 likers:'',
+                                 commentars:'',
+                                 isphoto:currentItem.isphoto,
+                                 comments:''
+                              });
+                }
+                
+                // Update preferences - Last Date Used
+                //
+                var fbAuth = fb.getAuth();
+                var usersRef = MembersFactory.ref();
+                var myUser = usersRef.child(fbAuth.uid);
+                var temp = {
+                    lastdate: currentItem.date
+                }
+                myUser.update(temp, function () {
+                    CurrentUserService.lastdate = temp.lastdate;
+                });
+            },
+            deletePost: function () {
+                return publicRef;
+            },
+            savePosting: function (posting) {
+                publicRef.$save(posting).then(function (ref) {
+                    //ref.key() = posting.$id;
+                });
+            }
             
             
         };
@@ -288,6 +347,18 @@ angular.module('starter.services', [])
             this.phone = user.phone;
         }
 })
+
+.service("CurrentVisitorService", function () {
+        var thisUser = this;
+        thisUser.updateUser = function (user) {
+            this.displayName = user.displayName;
+            this.email = user.email;
+            this.emailVerified = user.emailVerified;
+            this.photoURL = user.photoURL;
+            this.uid = user.uid;
+            this.providerData = providerData;
+        }
+})
     // Transaction Pick Lists
 .service("PickTransactionServices", function () {
         var transactionType = this;
@@ -303,6 +374,8 @@ angular.module('starter.services', [])
         var transNote = this;
         var transTitle = this;
         var transSearch = this;
+        var transLikes = this;
+        var transComments = this;
         transactionType.updateType = function (value, type) {
             this.typeDisplaySelected = value;
             this.typeInternalSelected = type;
@@ -360,6 +433,12 @@ angular.module('starter.services', [])
         }
         transSearch.updateSearch = function (value) {
             this.searchSelected = value;
+        }
+        transLikes.updateLikes = function (value) {
+            this.likesSelected = value;
+        }
+        transComments.updateComments = function (value) {
+            this.commentsSelected = value;
         }
 })
 

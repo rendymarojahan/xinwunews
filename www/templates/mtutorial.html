@@ -10,7 +10,7 @@
             <ion-item ng-repeat="item in items" item="item" class="manage item-remove-animate">
                 <ion-delete-button class="ion-minus-circled" ng-click="delete(item)"></ion-delete-button>
                 <a class="item item-avatar">
-                  <img src="data:image/jpeg;base64,{{ item.photo }}">
+                  <iframe src='{{ item.video }}' frameborder="0" class="video-manage"></iframe>
                   <h2>{{ item.title }}</h2>
                   <p>{{ item.note }}</p>
                 </a>

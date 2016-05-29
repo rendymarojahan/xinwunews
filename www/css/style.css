@@ -34,6 +34,32 @@ h4, .h4 {
     height: 100%;
 }
 
+.video-manage {
+    position: absolute;
+    border-radius: 50%;
+    top: 16px;
+    left: 16px;
+    max-height: 40px;
+    max-width: 40px;
+    -webkit-user-drag: none;
+}
+ 
+.video-manage iframe, .video-manage object, .video-manage embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.manage.item-complex .item-content, .item-radio .item-content {
+    position: relative;
+    z-index: 2;
+    padding: 0px 49px 0px 0px;
+    border: none;
+    background-color: #fff;
+}
+
 /* Directives : MD Label
 ==================================*/
 

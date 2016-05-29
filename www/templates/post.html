@@ -1,5 +1,12 @@
 <ion-view view-title="News">
-    <ion-content ng-class="{expanded:$scope.isExpanded}">
+    <ion-content>
+        <div ng-hide="hideValidationMessage" class="cssSlideUp ng-hide">
+            <div class="validationDiv">
+                <p>
+                    {{ validationMessage }}
+                </p>
+            </div>
+        </div>
         <div class="hero slide-up">
         <img src="data:image/jpeg;base64,{{ photo }}"></img>
         </div>
@@ -10,20 +17,18 @@
         <p class="content padding double-padding-x">{{ note }}</p>
 
         <div class="list animate-fade-slide-in-right">
-            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
-                <img src="img/jon-snow.jpg">
-                <h2>Jon Snow</h2>
-                <p>Da illest illegitimate</p>
+            <a ng-repeat="comment in commentars | orderBy:'-date'" class="item item-avatar item-icon-right">
+                <img src="data:image/jpeg;base64,{{ comment.photo }}">
+                <h2>{{ comment.username }}</h2>
+                <p>{{ comment.note }}</p>
             </a>
-            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
-                <img src="img/jon-snow.jpg">
-                <h2>Jon Snow</h2>
-                <p>Da illest illegitimate</p>
-            </a>
-            <a ui-sref="app.friends" class="item item-avatar item-icon-right">
-                <img src="img/jon-snow.jpg">
-                <h2>Jon Snow</h2>
-                <p>Da illest illegitimate</p>
+        </div>
+        <div ng-if="login" class="list animate-fade-slide-in-right">
+            <a class="item item-avatar item-icon-right">
+                <img src="data:image/jpeg;base64,{{ userphoto }}">
+                <h2>{{ username }}</h2>
+                <textarea placeholder="insert your comments" rows="5" ng-model="postcomment.note" focus-me></textarea>
+                <i class="icon ion-ios-chatbubble" ng-click="addcomment(postcomment)"></i>
             </a>
         </div>
     </ion-content>

@@ -19,7 +19,7 @@
                                 <i class="pull-left icon ion-clock"></i>{{ post.date| amCalendar:referenceTime:formats }}
                         </div>
                         <div class="card-footer text-left">
-                            <i class="icon ion-chatbubble positive"></i> {{ post.comments }}
+                            <i class="icon ion-chatbubble positive" ng-click="handleCommentOptions($event, post)"></i> {{ post.comments }}
                             <i class="icon ion-heart assertive"></i> {{ post.likes }}
                         </div>
                     </div>

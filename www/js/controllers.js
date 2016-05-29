@@ -17,24 +17,10 @@ angular.module('starter.controllers', [])
           auth.$authWithOAuthToken("google", result.access_token).then(function(authData) {
               console.log("google login success");
               console.log(JSON.stringify(authData));
-              $http({method:"GET", url:"https://www.googleapis.com/plus/v1/people/me?access_token="+result.access_token}).
-                success(function(response){
-                         console.log(response);
-                        var param = {
-                          provider: 'google',
-                            google: {
-                                          uid: response["id"],
-                                          provider: 'google',
-                                          first_name: response["name"]["givenName"],
-                                          last_name: response["name"]["familyName"],
-                                          email: response.emails[0]["value"],
-                                          image: response.image.url
-                                      }
-                          };
-                          console.log(param);
-                }, function(error) {
-                  console.log(error);
-                });
+              myCache.put('thisUserName', authData.displayName);
+              myCache.put('thisUserPhoto', authData.photoURL);
+              myCache.put('thisUserLogin', true);
+              CurrentVisitorService.updateUser(authData);
               $scope.modal.hide();
               $state.reload('app.news');
           }, function(error) {
@@ -80,7 +66,9 @@ angular.module('starter.controllers', [])
                     
                     /* Save user data for later use */
                     myCache.put('thisUserName', $scope.fullname());
+                    myCache.put('thisUserPhoto', thisuser.photo);
                     myCache.put('thisMemberId', authData.uid);
+                    myCache.put('thisUserLogin', true);
                     CurrentUserService.updateUser(thisuser);
 
                     if (thisuser.firstname !== '' && thisuser.isadmin === true) {
@@ -139,9 +127,10 @@ angular.module('starter.controllers', [])
   ];
 })
 
-.controller('NewsCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+.controller('NewsCtrl', function($scope, $state, $ionicModal, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
 	$scope.news = [];
   $scope.new = [];
+  $scope.login = myCache.get('thisUserLogin');
 	$scope.isshow = false;
     $scope.userId = myCache.get('thisMemberId')
     $scope.photo = CurrentUserService.photo;
@@ -186,6 +175,13 @@ angular.module('starter.controllers', [])
     $scope.listCanSwipe = true;
     $scope.handleSwipeOptions = function ($event, post) {
         $state.go('app.post', { postId: post.$id });
+    };
+    $scope.handleCommentOptions = function ($event, post) {
+      if ($scope.login = true) {
+        $state.go('app.post', { postId: post.$id });
+      }else{
+        alert("You must login to comment");
+      }
     };
 
 	$scope.isadmin = CurrentUserService.isadmin;
@@ -355,10 +351,11 @@ angular.module('starter.controllers', [])
     }
 })
 
-.controller('PostingCtrl', function ($scope, $state, $stateParams, $cordovaSocialSharing, $cordovaCamera, $ionicActionSheet, $ionicHistory, AccountsFactory, PickTransactionServices, myCache, CurrentUserService) {
+.controller('PostingCtrl', function ($scope, $state, $stateParams, $cordovaSocialSharing, $cordovaCamera, $ionicActionSheet, $ionicHistory, NewsFactory, PickTransactionServices, myCache, CurrentUserService) {
 
     $scope.hideValidationMessage = true;
     $scope.loadedClass = 'hidden';
+    $scope.video = "https://www.youtube.com/embed/";
     $scope.transactions = [];
     $scope.AccountTitle = '';
     $scope.inEditMode = false;
@@ -370,22 +367,80 @@ angular.module('starter.controllers', [])
     $scope.currentItem = {
         'date': '',
         'isphoto': false,
+        'isvideo': false,
         'title': '',
         'note': '',
         'photo': '',
         'video': '',
         'comments': '',
         'likes': '',
+        'likers': '',
+        'commentars': '',
         'typedisplay': ''
     };
 
-    $scope.firstname = CurrentUserService.firstname;
-    $scope.surename = CurrentUserService.surename;
-    $scope.fullname = function (){
-    	return $scope.firstname +" "+ $scope.surename;
-    };
-    $scope.photo = CurrentUserService.photo;
-    $scope.admin = CurrentUserService.isadmin;
+    // EDIT / CREATE Posting
+    if ($stateParams.PostingId === '') {
+        //
+        // Create Posting
+        //
+        $scope.firstname = CurrentUserService.firstname;
+        $scope.surename = CurrentUserService.surename;
+        $scope.fullname = function (){
+          return $scope.firstname +" "+ $scope.surename;
+        };
+        $scope.photo = CurrentUserService.photo;
+        $scope.admin = CurrentUserService.isadmin;
+        $scope.PostingTitle = "New Posting";
+        // Handle defaults
+        if (CurrentUserService.defaultdate === "None") {
+            // Leave field blank
+        } else if (CurrentUserService.defaultdate === "Today") {
+            // Enter today's date
+            $scope.DisplayDate = moment(new Date()).format('MMMM D, YYYY');
+            PickTransactionServices.dateSelected = $scope.DisplayDate;
+        } else if (CurrentUserService.defaultdate === "Last") {
+            // Enter last date used
+            $scope.DisplayDate = moment(CurrentUserService.lastdate).format('MMMM D, YYYY');
+            PickTransactionServices.dateSelected = $scope.DisplayDate;
+        }
+    } else {
+        //
+        // Edit posting
+        //
+        $scope.firstname = CurrentUserService.firstname;
+        $scope.surename = CurrentUserService.surename;
+        $scope.fullname = function (){
+          return $scope.firstname +" "+ $scope.surename;
+        };
+        $scope.photo = CurrentUserService.photo;
+        $scope.admin = CurrentUserService.isadmin;
+        var posting = NewsFactory.getPosting($stateParams.PostingId);
+        $scope.inEditMode = true;
+        $scope.currentItem = posting;
+        $scope.DisplayDate = moment(posting.date).format('MMMM D, YYYY hh:mm a');
+        PickTransactionServices.dateSelected = $scope.DisplayDate;
+        PickTransactionServices.timeSelected = posting.date; //epoch date from Firebase
+        PickTransactionServices.typeDisplaySelected = $scope.currentItem.typedisplay;
+        PickTransactionServices.titleSelected = $scope.currentItem.title;
+        PickTransactionServices.likesSelected = $scope.currentItem.likes;
+        PickTransactionServices.commentsSelected = $scope.currentItem.comments;
+        PickTransactionServices.noteSelected = $scope.currentItem.note;
+        PickTransactionServices.photoSelected = $scope.currentItem.photo;
+        PickTransactionServices.videoSelected = $scope.currentItem.video;
+        if ($scope.currentItem.photo === '') {
+            $scope.currentItem.photo = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+        }
+        if ($scope.currentItem.istransfer) {
+            angular.copy($scope.currentItem, $scope.ItemOriginal);
+        }
+        $scope.PostingTitle = "Edit Posting";
+        if ($scope.currentItem.video !== '') {
+          $scope.currentItem.isvideo = true;
+        }
+    }
+
+    
 
     $scope.$on('$ionicView.beforeEnter', function () {
         $scope.hideValidationMessage = true;
@@ -397,93 +452,98 @@ angular.module('starter.controllers', [])
         }
         $scope.currentItem.title = PickTransactionServices.titleSelected;
         $scope.currentItem.note = PickTransactionServices.noteSelected;
-        $scope.video = "https://www.youtube.com/embed/";
-        $scope.currentItem.video = $scope.video+PickTransactionServices.videoSelected;
+        if (typeof PickTransactionServices.videoSelected === '') {
+          $scope.currentItem.isvideo = false;
+          $scope.video = '';
+        }else if (typeof PickTransactionServices.dateSelected !== 'undefined' && PickTransactionServices.videoSelected !== ''){
+          $scope.currentItem.video = $scope.video+PickTransactionServices.videoSelected;
+          $scope.currentItem.isvideo = true;
+        }
         // Handle transaction date
         if (typeof PickTransactionServices.dateSelected !== 'undefined' && PickTransactionServices.dateSelected !== '') {
             $scope.DisplayDate = PickTransactionServices.dateSelected;
         }
         // Handle Two Ways Binding
         if ($scope.currentItem.typedisplay === "News"){
-        	$scope.type = function (){ return "create News";};
-    	} else if ($scope.currentItem.typedisplay === "Tutorial"){
-        	$scope.type = function (){ return "create Tutorial ";};
-        } else if ($scope.currentItem.typedisplay === "Tips"){
-        	$scope.type = function (){ return "create Tips ";};
-        }
-    	if ($scope.currentItem.note !== ''){
-        	$scope.note = function (){ return " " + $scope.currentItem.note;};
-    	}
-    	if ($scope.currentItem.photo !== ''){
-        	$scope.sphoto = function (){ return " " + $scope.currentItem.photo;};
-    	}
+          	$scope.type = function (){ return "create News";};
+      	} else if ($scope.currentItem.typedisplay === "Tutorial"){
+          	$scope.type = function (){ return "create Tutorial ";};
+          } else if ($scope.currentItem.typedisplay === "Tips"){
+          	$scope.type = function (){ return "create Tips ";};
+          }
+      	if ($scope.currentItem.note !== ''){
+          	$scope.note = function (){ return " " + $scope.currentItem.note;};
+      	}
+      	if ($scope.currentItem.photo !== ''){
+          	$scope.sphoto = function (){ return " " + $scope.currentItem.photo;};
+      	}
     });
 
     // PICK TRANSACTION TYPE
     $scope.pickPostPhoto = function() {
 	
-		$scope.hideSheet = $ionicActionSheet.show({
+  		$scope.hideSheet = $ionicActionSheet.show({
 
-			buttons: [
-        		{ text: '<i class="icon ion-camera"></i> Take Picture' },
-        		{ text: '<i class="icon ion-images"></i> Choose Album' },
-    		],
-			buttonClicked: function(index) {
-				switch (index) {
-                case 0:
-                    $scope.currentItem = { photo: PickTransactionServices.photoSelected };
-        				
-            				var options = {
-			                quality: 75,
-			                destinationType: Camera.DestinationType.DATA_URL,
-			                sourceType: Camera.PictureSourceType.CAMERA,
-			                allowEdit: false,
-			                encodingType: Camera.EncodingType.JPEG,
-			                popoverOptions: CameraPopoverOptions,
-			                targetWidth: 800,
-			                targetHeight: 800,
-			                saveToPhotoAlbum: false
-            				};
-				            $cordovaCamera.getPicture(options).then(function (imageData) {
-				                $scope.currentItem.photo = imageData;
-        								PickTransactionServices.updatePhoto($scope.currentItem.photo);
-        								$scope.currentItem.isphoto = true;
-				            }, function (error) {
-				                console.error(error);
-				            })
+  			buttons: [
+          		{ text: '<i class="icon ion-camera"></i> Take Picture' },
+          		{ text: '<i class="icon ion-images"></i> Choose Album' },
+      		],
+  			buttonClicked: function(index) {
+  				switch (index) {
+                  case 0:
+                      $scope.currentItem = { photo: PickTransactionServices.photoSelected };
+          				
+              				var options = {
+  			                quality: 75,
+  			                destinationType: Camera.DestinationType.DATA_URL,
+  			                sourceType: Camera.PictureSourceType.CAMERA,
+  			                allowEdit: false,
+  			                encodingType: Camera.EncodingType.JPEG,
+  			                popoverOptions: CameraPopoverOptions,
+  			                targetWidth: 800,
+  			                targetHeight: 800,
+  			                saveToPhotoAlbum: false
+              				};
+  				            $cordovaCamera.getPicture(options).then(function (imageData) {
+  				                $scope.currentItem.photo = imageData;
+          								PickTransactionServices.updatePhoto($scope.currentItem.photo);
+          								$scope.currentItem.isphoto = true;
+  				            }, function (error) {
+  				                console.error(error);
+  				            })
 
-                break;
-                case 1:
-                	$scope.currentItem = { photo: PickTransactionServices.photoSelected };
-            				var options = {
-			                quality: 75,
-			                destinationType: Camera.DestinationType.DATA_URL,
-			                sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
-			                allowEdit: false,
-			                encodingType: Camera.EncodingType.JPEG,
-			                popoverOptions: CameraPopoverOptions,
-			                targetWidth: 800,
-			                targetHeight: 800,
-			                saveToPhotoAlbum: false
-            				};
-				            $cordovaCamera.getPicture(options).then(function (imageData) {
-				                $scope.currentItem.photo = imageData;
-				                PickTransactionServices.updatePhoto($scope.currentItem.photo);
-				                $scope.currentItem.isphoto = true;
-				            }, function (error) {
-				                console.error(error);
-				            })
-        			
-                break;
-            	}
-            	return true;
-    		},
-			cancelText: 'Cancel',
-				cancel: function() {
-				console.log('CANCELLED');
-			}
-		});	
-	 }
+                  break;
+                  case 1:
+                  	$scope.currentItem = { photo: PickTransactionServices.photoSelected };
+              				var options = {
+  			                quality: 75,
+  			                destinationType: Camera.DestinationType.DATA_URL,
+  			                sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+  			                allowEdit: false,
+  			                encodingType: Camera.EncodingType.JPEG,
+  			                popoverOptions: CameraPopoverOptions,
+  			                targetWidth: 800,
+  			                targetHeight: 800,
+  			                saveToPhotoAlbum: false
+              				};
+  				            $cordovaCamera.getPicture(options).then(function (imageData) {
+  				                $scope.currentItem.photo = imageData;
+  				                PickTransactionServices.updatePhoto($scope.currentItem.photo);
+  				                $scope.currentItem.isphoto = true;
+  				            }, function (error) {
+  				                console.error(error);
+  				            })
+          			
+                  break;
+              	}
+              	return true;
+      		},
+  			cancelText: 'Cancel',
+  				cancel: function() {
+  				console.log('CANCELLED');
+  			}
+  		});	
+  	 }
     // PICK TRANSACTION TYPE
     // Don't let users change the transaction type. If needed, a user can delete the transaction and add a new one
     $scope.pickNewsType = function () {
@@ -571,33 +631,14 @@ angular.module('starter.controllers', [])
                     //console.log('Synchronization failed');
                 }
             };
-            AccountsFactory.saveTransaction($scope.currentItem);
-            var accountId = '';
-            var otherAccountId = '';
-            var OtherTransaction = {};
-            if ($scope.ItemOriginal.istransfer) {
-                if ($stateParams.accountId === $scope.currentItem.accountToId) {
-                    // Transfer is coming into the current account --> income
-                    $scope.currentItem.type = 'Income';
-                    accountId = $scope.currentItem.accountToId;
-                    otherAccountId = $scope.currentItem.accountFromId;
-                    OtherTransaction.type = 'Expense';
-                    OtherTransaction.amount = $scope.currentItem.amount;
-                } else {
-                    // Transfer is moving into the other account --> expense
-                    $scope.currentItem.type = 'Expense';
-                    accountId = $scope.currentItem.accountFromId;
-                    otherAccountId = $scope.currentItem.accountToId;
-                    OtherTransaction.type = 'Income';
-                    OtherTransaction.amount = $scope.currentItem.amount;
-                }
-
-                console.log(OtherTransaction);
-
-                var transferRef = AccountsFactory.getTransactionRef(otherAccountId, $scope.ItemOriginal.linkedtransactionid);
-                transferRef.update(OtherTransaction);
-            }
-
+            NewsFactory.savePosting($scope.currentItem);
+            PickTransactionServices.typeDisplaySelected = '';
+            PickTransactionServices.typeInternalSelected = '';
+            PickTransactionServices.dateSelected = '';
+            PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+            PickTransactionServices.noteSelected = '';
+            PickTransactionServices.titleSelected = '';
+            PickTransactionServices.videoSelected = '';
             $scope.inEditMode = false;
             //
         } else {
@@ -607,7 +648,7 @@ angular.module('starter.controllers', [])
             $scope.currentItem.addedby = myCache.get('thisUserName');
             $scope.currentItem.userid = myCache.get('thisMemberId');
             //
-            AccountsFactory.createPosting($scope.currentItem);
+            NewsFactory.createPosting($scope.currentItem);
             PickTransactionServices.typeDisplaySelected = '';
             PickTransactionServices.typeInternalSelected = '';
             PickTransactionServices.dateSelected = '';
@@ -623,45 +664,73 @@ angular.module('starter.controllers', [])
 
 .controller('PostCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
 
+  $scope.hideValidationMessage = true;
   $scope.posts = [];
-    $scope.userId = myCache.get('thisMemberId');
-    $scope.photo = {
-        userid: ''
+  $scope.commentars = [];
+  $scope.username = myCache.get('thisUserName');
+  $scope.userphoto = myCache.get('thisUserPhoto');
+  $scope.login = myCache.get('thisUserLogin');
+  $scope.userId = myCache.get('thisMemberId');
+  $scope.postcomment = {
+        note: '',
+        date: Firebase.ServerValue.TIMESTAMP,
+        username: myCache.get('thisUserName'),
+        photo: myCache.get('thisUserPhoto')
     };
 
-    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-        if (fromState.name === "app.post") {
-            refresh($scope.posts, $scope, NewsFactory);
-        }
-    });
+  $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+      if (fromState.name === "app.post") {
+          refresh($scope.posts, $scope, NewsFactory);
+      }
+  });
 
-    NewsFactory.getPost($stateParams.postId).then(function (post) {
-      $scope.title = post.title;
-      $scope.date = post.date;
-      $scope.note = post.note;
-      $scope.typedisplay = post.typedisplay;
-      $scope.photo = post.photo;
-      $scope.likes = post.likes;
-      $scope.comments = post.comments;
-    });
+  NewsFactory.getPost($stateParams.postId).then(function (post) {
+    $scope.title = post.title;
+    $scope.date = post.date;
+    $scope.note = post.note;
+    $scope.typedisplay = post.typedisplay;
+    $scope.photo = post.photo;
+    $scope.likes = post.likes;
+    $scope.comments = post.comments;
+  });
 
-    
+  $scope.commentars = NewsFactory.getNewsComments($stateParams.postId);
+  $scope.commentars.$loaded().then(function (x) {
+      refresh($scope.commentars, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+  });
 
-    $scope.doRefresh = function (){
+  $scope.addcomment = function (postcomment) {
 
-      $scope.posts = NewsFactory.getPost($stateParams.postId);
-      scope.posts.$loaded().then(function (x) {
-      refresh($scope.news, $scope, NewsFactory, $stateParams.postId);
-          $scope.$broadcast('scroll.refreshComplete');
-      }).catch(function (error) {
-          console.error("Error:", error);
-      });
-
-    };
-
-    function refresh(posts, $scope, NewsFactory) {
-    
+      var post_note = postcomment.note;
+      /* VALIDATE DATA */
+      if (!post_note) {
+          $scope.hideValidationMessage = false;
+          $scope.validationMessage = "No Comment"
+          return;
+      }else {
+      $scope.hideValidationMessage = true;
+      NewsFactory.createComment($stateParams.postId, postcomment);
+      $state.reload('app.post');
     }
+  };
+
+  $scope.doRefresh = function (){
+
+    $scope.posts = NewsFactory.getPost($stateParams.postId);
+    scope.posts.$loaded().then(function (x) {
+    refresh($scope.news, $scope, NewsFactory, $stateParams.postId);
+        $scope.$broadcast('scroll.refreshComplete');
+    }).catch(function (error) {
+        console.error("Error:", error);
+    });
+
+  };
+
+  function refresh(posts, commentars, $scope, NewsFactory) {
+  
+  }
 
 })
 
@@ -1028,17 +1097,33 @@ angular.module('starter.controllers', [])
 
 })
 
-.controller('MnewsCtrl', function ($scope, $ionicHistory, PickTransactionServices, NewsFactory) {
+.controller('MnewsCtrl', function ($scope, $state, $stateParams, $ionicHistory, $ionicActionSheet, $ionicListDelegate, $cordovaSocialSharing, PickTransactionServices, NewsFactory) {
 
   $scope.data = {
     showDelete: false
   };
   
   $scope.edit = function(item) {
-    alert('Edit Item: ' + item.id);
+    $state.go('app.posting', { PostingId: item.$id });
   };
   $scope.share = function(item) {
-    alert('Share Item: ' + item.id);
+    var message = item.note;
+    var subject = item.title;
+    if(item.photo === '' && item.video === ''){
+      var file = null;
+    }else if(item.photo !== ''){
+      var file = item.photo;
+    }else if(item.video !== ''){
+      var file = item.video;
+    }else{
+      var file = null;
+    }
+    var link = 'https://www.zezi.firebaseapp.com';
+    $cordovaSocialSharing.share(message, subject, file, link).then(function(result) {
+      alert("Share Success");
+    }, function(err) {
+      alert("Share Failed");
+    });
   };
   
   $scope.moveItem = function(item, fromIndex, toIndex) {
@@ -1049,6 +1134,36 @@ angular.module('starter.controllers', [])
   $scope.onItemDelete = function(item) {
     $scope.items.splice($scope.items.indexOf(item), 1);
   };
+
+  $scope.delete = function (item) {
+        // Show the action sheet
+        $ionicActionSheet.show({
+            destructiveText: 'Delete Tips',
+            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tips',
+            cancelText: 'Cancel',
+            cancel: function () {
+                // add cancel code..
+            },
+            buttonClicked: function (index) {
+                //Called when one of the non-destructive buttons is clicked,
+                //with the index of the button that was clicked and the button object.
+                //Return true to close the action sheet, or false to keep it opened.
+                return true;
+            },
+            destructiveButtonClicked: function () {
+                //Called when the destructive button is clicked.
+                //Return true to close the action sheet, or false to keep it opened.
+                $ionicListDelegate.closeOptionButtons();
+                // Delete
+                //
+                var allpost = NewsFactory.deletePost();
+                allpost.$remove(item).then(function (ref) {
+                    refresh($scope.items, $scope, NewsFactory);
+                });
+                return true;
+            }
+        });
+    };
   
   $scope.items = [];
   $scope.items = NewsFactory.getNews();
@@ -1064,11 +1179,167 @@ angular.module('starter.controllers', [])
 
 })
 
-.controller('MtutorialCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+.controller('MtutorialCtrl', function ($scope, $state, $stateParams, $ionicHistory, $ionicActionSheet, $ionicListDelegate, $cordovaSocialSharing, PickTransactionServices, NewsFactory) {
+
+  $scope.data = {
+    showDelete: false
+  };
+  
+  $scope.edit = function(item) {
+    $state.go('app.posting', { PostingId: item.$id });
+  };
+  $scope.share = function(item) {
+    var message = item.note;
+    var subject = item.title;
+    if(item.photo === '' && item.video === ''){
+      var file = null;
+    }else if(item.photo !== ''){
+      var file = item.photo;
+    }else if(item.video !== ''){
+      var file = item.video;
+    }else{
+      var file = null;
+    }
+    var link = 'https://www.zezi.firebaseapp.com';
+    $cordovaSocialSharing.share(message, subject, file, link).then(function(result) {
+      alert("Share Success");
+    }, function(err) {
+      alert("Share Failed");
+    });
+  };
+  
+  $scope.moveItem = function(item, fromIndex, toIndex) {
+    $scope.items.splice(fromIndex, 1);
+    $scope.items.splice(toIndex, 0, item);
+  };
+  
+  $scope.onItemDelete = function(item) {
+    $scope.items.splice($scope.items.indexOf(item), 1);
+  };
+
+  $scope.delete = function (item) {
+        // Show the action sheet
+        $ionicActionSheet.show({
+            destructiveText: 'Delete Tips',
+            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tips',
+            cancelText: 'Cancel',
+            cancel: function () {
+                // add cancel code..
+            },
+            buttonClicked: function (index) {
+                //Called when one of the non-destructive buttons is clicked,
+                //with the index of the button that was clicked and the button object.
+                //Return true to close the action sheet, or false to keep it opened.
+                return true;
+            },
+            destructiveButtonClicked: function () {
+                //Called when the destructive button is clicked.
+                //Return true to close the action sheet, or false to keep it opened.
+                $ionicListDelegate.closeOptionButtons();
+                // Delete
+                //
+                var allpost = NewsFactory.deletePost();
+                allpost.$remove(item).then(function (ref) {
+                    refresh($scope.items, $scope, NewsFactory);
+                });
+                return true;
+            }
+        });
+    };
+  
+  $scope.items = [];
+  $scope.items = NewsFactory.getTutorial();
+    $scope.items.$loaded().then(function (x) {
+      refresh($scope.items, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+  });
+
+  function refresh(items, $scope, NewsFactory) {
+    
+    }
 
 })
 
-.controller('MtipsCtrl', function ($scope, $ionicHistory, PickTransactionServices) {
+.controller('MtipsCtrl', function ($scope, $state, $stateParams, $ionicHistory, $ionicActionSheet, $ionicListDelegate, $cordovaSocialSharing, PickTransactionServices, NewsFactory) {
+
+  $scope.data = {
+    showDelete: false
+  };
+  
+  $scope.edit = function(item) {
+    $state.go('app.posting', { PostingId: item.$id });
+  };
+  $scope.share = function(item) {
+    var message = item.note;
+    var subject = item.title;
+    if(item.photo === '' && item.video === ''){
+      var file = null;
+    }else if(item.photo !== ''){
+      var file = item.photo;
+    }else if(item.video !== ''){
+      var file = item.video;
+    }else{
+      var file = null;
+    }
+    var link = 'https://www.zezi.firebaseapp.com';
+    $cordovaSocialSharing.share(message, subject, file, link).then(function(result) {
+      alert("Share Success");
+    }, function(err) {
+      alert("Share Failed");
+    });
+  };
+  
+  $scope.moveItem = function(item, fromIndex, toIndex) {
+    $scope.items.splice(fromIndex, 1);
+    $scope.items.splice(toIndex, 0, item);
+  };
+  
+  $scope.onItemDelete = function(item) {
+    $scope.items.splice($scope.items.indexOf(item), 1);
+  };
+
+  $scope.delete = function (item) {
+        // Show the action sheet
+        $ionicActionSheet.show({
+            destructiveText: 'Delete Tips',
+            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tips',
+            cancelText: 'Cancel',
+            cancel: function () {
+                // add cancel code..
+            },
+            buttonClicked: function (index) {
+                //Called when one of the non-destructive buttons is clicked,
+                //with the index of the button that was clicked and the button object.
+                //Return true to close the action sheet, or false to keep it opened.
+                return true;
+            },
+            destructiveButtonClicked: function () {
+                //Called when the destructive button is clicked.
+                //Return true to close the action sheet, or false to keep it opened.
+                $ionicListDelegate.closeOptionButtons();
+                // Delete
+                //
+                var allpost = NewsFactory.deletePost();
+                allpost.$remove(item).then(function (ref) {
+                    refresh($scope.items, $scope, NewsFactory);
+                });
+                return true;
+            }
+        });
+    };
+  
+  $scope.items = [];
+  $scope.items = NewsFactory.getTips();
+    $scope.items.$loaded().then(function (x) {
+      refresh($scope.items, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+  });
+
+  function refresh(items, $scope, NewsFactory) {
+    
+    }
 
 })
 

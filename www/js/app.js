@@ -123,7 +123,7 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
   })
 
   .state('app.posting', {
-    url: '/posting',
+    url: "/posting/:PostingId",
     views: {
       'menuContent': {
         templateUrl: 'templates/posting.html',

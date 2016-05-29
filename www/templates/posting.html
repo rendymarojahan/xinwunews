@@ -1,4 +1,4 @@
-<ion-view view-title="Posting">
+<ion-view view-title={{PostingTitle}}>
     <button class="button button-post" ng-click="savePosting()">
         <i class="icon ion-android-checkmark-circle"></i>
     </button>
@@ -14,11 +14,11 @@
             <div class="item item-avatar posting">
                 <img src="data:image/jpeg;base64,{{ photo }}">
                 <h2>{{fullname()}}</h2>
-                <p></p>
+                <p>{{type()}}</p>
             </div>
             <div class="row">
-              <div class="col col-10 col-offset-10"><i class="icon ion-social-facebook placeholder-icon" ng-click="shareViaFacebook()"></i></div>
-              <div class="col col-10"><i class="icon ion-social-twitter placeholder-icon" ng-click="shareViaTwitter()"></i></div>
+              <div class="col col-10 col-offset-10"><i class="icon ion-social-facebook placeholder-icon" ng-click="shareViaFacebook('{{currentItem.title}}', null, 'https://www.xinwu.firebaseapp.com')"></i></div>
+              <div class="col col-10"><i class="icon ion-social-twitter placeholder-icon" ng-click="shareViaTwitter('{{currentItem.title}}', '{{currentItem.photo}}', 'https://www.xinwu.firebaseapp.com')"></i></div>
               <div class="col col-10"><i class="icon ion-social-googleplus placeholder-icon" ng-click="pickPostPhoto()"></i></div>
               <div class="col col-10"><i class="icon ion-social-instagram placeholder-icon" ng-click="pickPostPhoto()"></i></div>
               <div class="col col-10"><i class="icon ion-social-linkedin placeholder-icon" ng-click="pickPostPhoto()"></i></div>
@@ -32,7 +32,10 @@
                 </label>
             </div>
             <div class="list card">
-                    <img ng-if="currentItem.isphoto" class="full-image" src="data:image/jpeg;base64,{{currentItem.photo}}">
+                <img ng-if="currentItem.isphoto" class="full-image" src="data:image/jpeg;base64,{{currentItem.photo}}">
+            </div>
+            <div ng-if="currentItem.isvideo" class="video-container">
+                <iframe src='{{ currentItem.video }}' frameborder="0" width="560" height="315"></iframe>
             </div>
             <div class="item range">
                 <i class="icon ion-ios-camera placeholder-icon" ng-click="pickPostPhoto()"></i>
