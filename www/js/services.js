@@ -133,48 +133,62 @@ angular.module('starter.services', [])
         var comments = {};
         var thisPublicId = CurrentUserService.public_id;
         var thisUserId = myCache.get('thisMemberId');
+        var thisUserEmail = myCache.get('thisUserEmail');
         return {
             ref: function () {
                 ref = fb.child("postings").child("Tips");
                 return ref;
             },
-            getPost: function (postid) {
+            getPost: function (postid, newstype) {
                 var deferred = $q.defer();
-                ref = fb.child("postings").child("News").child(postid);
+                ref = fb.child("postings").child(newstype).child(postid);
                 ref.once("value", function (snap) {
                     deferred.resolve(snap.val());
                 });
                 return deferred.promise;
             },
-            countComments: function (postid) {
-                var deferred = $q.defer();
-                ref = fb.child("postings").child("News").child(postid).child("commentars");
-                ref.once("value", function (snap) {
-                    if (snap.numChildren()) {
-                            deferred.resolve(snap.numChildren());
-                        }
-                    }, function (errorObject) {
-                        console.log("The read failed: " + errorObject.code);
+            createLikes: function (postid, email, newstype) {
+                fb.child("postings").child(newstype).child(postid).child("likers").orderByChild("likeremail").startAt(email)
+                .endAt(email)
+                .once('value', function (snap) {
+                    if (snap.val()) {
+                        alert("You have like this post");
+                    }else{
+                        var ref = fb.child("postings").child(newstype).child(postid).child("likers");
+                        ref.push({   likeremail: email
+                              });
+
+                        likes = fb.child("postings").child(newstype).child(postid);
+                        likes.once("value", function (snap) {
+                            var data = snap.val();
+                            var temp = {
+                                likes: data.likes + 1
+                            }
+                            fb.child("postings").child(newstype).child(postid).update(temp);
+                        });
+                    }
+                }, function (errorObject) {
+                    console.log("The read failed: " + errorObject.code);
                 });
-                return deferred.promise;
             },
-            countLikes: function (postid) {
-                var deferred = $q.defer();
-                ref = fb.child("postings").child("News").child(postid).child("likers");
-                ref.once("value", function (snap) {
-                    var a = snap.numChildren();
-                    deferred.resolve(a);
-                });
-                return deferred.promise;
-            },
-            getNewsComments: function (postid) {
-                ref = fb.child("postings").child("News").child(postid).child("commentars");
+            getNewsComments: function (postid, newstype) {
+                ref = fb.child("postings").child(newstype).child(postid).child("commentars");
                 comments = $firebaseArray(ref);
                 return comments;
             },
-            createComment: function (postid, postcomment) {
-                var ref = fb.child("postings").child("News").child(postid).child("commentars");
+            createComment: function (postid, postcomment, newstype) {
+                var ref = fb.child("postings").child(newstype).child(postid).child("commentars");
                 ref.push(postcomment);
+
+                comments = fb.child("postings").child(newstype).child(postid);
+                comments.once("value", function (snap) {
+                    var data = snap.val();
+                    var temp = {
+                        comments: data.comments + 1
+                    }
+                    fb.child("postings").child(newstype).child(postid).update(temp);
+                });
+
             },
             getNews: function () {
                 ref = fb.child("postings").child("News");
@@ -219,11 +233,11 @@ angular.module('starter.services', [])
                                  note: currentItem.note,
                                  photo: CurrentUserService.photo,
                                  date: currentItem.date,
-                                 likes:'',
+                                 likes:0,
                                  likers:'',
                                  commentars:'',
                                  isphoto:currentItem.isphoto,
-                                 comments:''
+                                 comments:0
                               });
                 }
                 

@@ -19,6 +19,7 @@ angular.module('starter.controllers', [])
               console.log(JSON.stringify(authData));
               myCache.put('thisUserName', authData.displayName);
               myCache.put('thisUserPhoto', authData.photoURL);
+              myCache.put('thisUserEmail', authData.email);
               myCache.put('thisUserLogin', true);
               CurrentVisitorService.updateUser(authData);
               $scope.modal.hide();
@@ -68,6 +69,7 @@ angular.module('starter.controllers', [])
                     myCache.put('thisUserName', $scope.fullname());
                     myCache.put('thisUserPhoto', thisuser.photo);
                     myCache.put('thisMemberId', authData.uid);
+                    myCache.put('thisUserEmail', thisuser.email);
                     myCache.put('thisUserLogin', true);
                     CurrentUserService.updateUser(thisuser);
 
@@ -130,6 +132,7 @@ angular.module('starter.controllers', [])
 .controller('NewsCtrl', function($scope, $state, $ionicModal, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, CurrentVisitorService, myCache) {
 	$scope.news = [];
 	$scope.new = [];
+  $scope.newstype = "News";
 	$scope.login = false;
 	$scope.isshow = false;
 	$scope.userId = myCache.get('thisMemberId')
@@ -177,23 +180,28 @@ angular.module('starter.controllers', [])
 	    $state.go('app.post', { postId: post.$id });
 	};
 	$scope.handleCommentOptions = function ($event, post) {
-		if (typeof CurrentUserService.firstname !== 'undefined' || CurrentVisitorService.displayName !== 'undefined') {
-	        $scope.login = true;
-		}else if (typeof CurrentUserService.firstname === 'undefined' || CurrentVisitorService.displayName === 'undefined'){
-			$scope.login = false;
-		}
 		if ($scope.login) {
-		$state.go('app.post', { postId: post.$id });
+		  $state.go('app.post', { postId: post.$id });
 		}else if(!$scope.login){
-		alert("You must login to comment");
+		  alert("You must login to comment");
 		}
 	};
+  $scope.handleLikesOptions = function ($event, post) {
+    if ($scope.login) {
+      NewsFactory.createLikes(post.$id, $scope.email, $scope.newstype);
+      $state.reload('app.news');
+    }else if(!$scope.login){
+      alert("You must login to like");
+    }
+  };
 
 	$scope.isadmin = CurrentUserService.isadmin;
 	$scope.$on('$ionicView.beforeEnter', function () {
 	    if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
 	        $scope.isadmin = CurrentUserService.isadmin;
-		}
+		  }
+      $scope.login = myCache.get('thisUserLogin');
+      $scope.email = myCache.get('thisUserEmail');
 	});
 
 	$scope.createPosting = function () {
@@ -209,26 +217,15 @@ angular.module('starter.controllers', [])
 
 	function refresh(news, $scope, NewsFactory) {
 
-	    var index;
-	    //
-	    for (index = 0; index < news.length; ++index) {
-	        //
-	        var post = news[index];
-	        $scope.ccoments.NewsFactory.countComments(post.$id);
-	        $scope.ccoments.$loaded().then(function (x) {
-	        	post.comments = $scope.ccoments;
-	        })
-	        $scope.clikes.NewsFactory.countLikes(post.$id);
-	        $scope.clikes.$loaded().then(function (x) {
-	        	post.comments = $scope.clikes;
-	        })
-	    }
+	    
 	}
 })
 
 .controller('TutorialCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
   $scope.news = [];
   $scope.new = [];
+  $scope.newstype = "Tutorial";
+  $scope.login = false;
   $scope.isshow = false;
     $scope.userId = myCache.get('thisMemberId')
     $scope.photo = CurrentUserService.photo;
@@ -272,7 +269,22 @@ angular.module('starter.controllers', [])
 
     $scope.listCanSwipe = true;
     $scope.handleSwipeOptions = function ($event, post) {
-        $state.go('app.post', { postId: post.$id });
+        $state.go('app.postvideo', { postId: post.$id });
+    };
+    $scope.handleCommentOptions = function ($event, post) {
+      if ($scope.login) {
+        $state.go('app.postvideo', { postId: post.$id });
+      }else if(!$scope.login){
+        alert("You must login to comment");
+      }
+    };
+    $scope.handleLikesOptions = function ($event, post) {
+      if ($scope.login) {
+        NewsFactory.createLikes(post.$id, $scope.email, $scope.newstype);
+        $state.reload('app.tutorial');
+      }else if(!$scope.login){
+        alert("You must login to like");
+      }
     };
 
   $scope.isadmin = CurrentUserService.isadmin;
@@ -280,6 +292,8 @@ angular.module('starter.controllers', [])
         if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
             $scope.isadmin = CurrentUserService.isadmin;
         }
+        $scope.login = myCache.get('thisUserLogin');
+        $scope.email = myCache.get('thisUserEmail');
     });
 
     $scope.createPosting = function () {
@@ -391,8 +405,8 @@ angular.module('starter.controllers', [])
         'note': '',
         'photo': '',
         'video': '',
-        'comments': '',
-        'likes': '',
+        'comments': 0,
+        'likes': 0,
         'likers': '',
         'commentars': '',
         'typedisplay': ''
@@ -684,6 +698,7 @@ angular.module('starter.controllers', [])
 .controller('PostCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
 
   $scope.hideValidationMessage = true;
+  $scope.newstype = "News";
   $scope.posts = [];
   $scope.commentars = [];
   $scope.username = myCache.get('thisUserName');
@@ -703,7 +718,7 @@ angular.module('starter.controllers', [])
       }
   });
 
-  NewsFactory.getPost($stateParams.postId).then(function (post) {
+  NewsFactory.getPost($stateParams.postId, $scope.newstype).then(function (post) {
     $scope.title = post.title;
     $scope.date = post.date;
     $scope.note = post.note;
@@ -713,7 +728,7 @@ angular.module('starter.controllers', [])
     $scope.comments = post.comments;
   });
 
-  $scope.commentars = NewsFactory.getNewsComments($stateParams.postId);
+  $scope.commentars = NewsFactory.getNewsComments($stateParams.postId, $scope.newstype);
   $scope.commentars.$loaded().then(function (x) {
       refresh($scope.commentars, $scope, NewsFactory);
     }).catch(function (error) {
@@ -730,16 +745,90 @@ angular.module('starter.controllers', [])
           return;
       }else {
       $scope.hideValidationMessage = true;
-      NewsFactory.createComment($stateParams.postId, postcomment);
+      NewsFactory.createComment($stateParams.postId, postcomment, $scope.newstype);
       $state.reload('app.post');
     }
   };
 
   $scope.doRefresh = function (){
 
-    $scope.posts = NewsFactory.getPost($stateParams.postId);
+    $scope.posts = NewsFactory.getPost($stateParams.postId, $scope.newstype);
     scope.posts.$loaded().then(function (x) {
-    refresh($scope.news, $scope, NewsFactory, $stateParams.postId);
+    refresh($scope.news, $scope, NewsFactory, $stateParams.postId, $scope.newstype);
+        $scope.$broadcast('scroll.refreshComplete');
+    }).catch(function (error) {
+        console.error("Error:", error);
+    });
+
+  };
+
+  function refresh(posts, commentars, $scope, NewsFactory) {
+  
+  }
+
+})
+
+.controller('PostVideoCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+
+  $scope.hideValidationMessage = true;
+  $scope.newstype = "Tutorial";
+  $scope.posts = [];
+  $scope.commentars = [];
+  $scope.username = myCache.get('thisUserName');
+  $scope.userphoto = myCache.get('thisUserPhoto');
+  $scope.login = myCache.get('thisUserLogin');
+  $scope.userId = myCache.get('thisMemberId');
+  $scope.postcomment = {
+        note: '',
+        date: Firebase.ServerValue.TIMESTAMP,
+        username: myCache.get('thisUserName'),
+        photo: myCache.get('thisUserPhoto')
+    };
+
+  $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+      if (fromState.name === "app.post") {
+          refresh($scope.posts, $scope, NewsFactory);
+      }
+  });
+
+  NewsFactory.getPost($stateParams.postId, $scope.newstype).then(function (post) {
+    $scope.title = post.title;
+    $scope.date = post.date;
+    $scope.note = post.note;
+    $scope.typedisplay = post.typedisplay;
+    $scope.photo = post.photo;
+    $scope.video = post.video;
+    $scope.likes = post.likes;
+    $scope.comments = post.comments;
+  });
+
+  $scope.commentars = NewsFactory.getNewsComments($stateParams.postId, $scope.newstype);
+  $scope.commentars.$loaded().then(function (x) {
+      refresh($scope.commentars, $scope, NewsFactory);
+    }).catch(function (error) {
+        console.error("Error:", error);
+  });
+
+  $scope.addcomment = function (postcomment) {
+
+      var post_note = postcomment.note;
+      /* VALIDATE DATA */
+      if (!post_note) {
+          $scope.hideValidationMessage = false;
+          $scope.validationMessage = "No Comment"
+          return;
+      }else {
+      $scope.hideValidationMessage = true;
+      NewsFactory.createComment($stateParams.postId, postcomment, $scope.newstype);
+      $state.reload('app.post');
+    }
+  };
+
+  $scope.doRefresh = function (){
+
+    $scope.posts = NewsFactory.getPost($stateParams.postId, $scope.newstype);
+    scope.posts.$loaded().then(function (x) {
+    refresh($scope.news, $scope, NewsFactory, $stateParams.postId, $scope.newstype);
         $scope.$broadcast('scroll.refreshComplete');
     }).catch(function (error) {
         console.error("Error:", error);

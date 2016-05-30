@@ -182,6 +182,16 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
     }
   })
 
+  .state('app.postvideo', {
+    url: "/postvideo/:postId",
+    views: {
+      'menuContent': {
+        templateUrl: 'templates/postvideo.html',
+        controller: 'PostVideoCtrl'
+      }
+    }
+  })
+
   .state('app.tutorial', {
       url: '/tutorial',
       views: {

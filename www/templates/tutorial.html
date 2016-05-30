@@ -8,19 +8,19 @@
         <div class="list half">
             <div class="card card-gallery item item-text-wrap" ng-repeat="post in news | orderBy:'-date'">
                 <div class="ink dark-bg">
-                    <h2>{{ post.title }}</h2>
+                    <h2 ng-click="handleSwipeOptions($event, post)">{{ post.title }}</h2>
                     <div class="video-container">
 	                    <iframe src='{{ post.video }}' frameborder="0" width="560" height="315"></iframe>
 	                </div>
                 </div>
                 <div class="item tabs tabs-secondary tabs-icon-left">
                     <a class="tab-item stable-bg assertive">
-                        <i class="icon ion-heart"></i>
+                        <i class="icon ion-heart" ng-click="handleLikesOptions($event, post)"></i>
                         {{ post.likes }}
                     </a>
                     <a class="tab-item stable-bg royal">
-                        <i class="icon ion-chatbubbles"></i>
-                        {{ post.Comments }}
+                        <i class="icon ion-chatbubbles" ng-click="handleCommentOptions($event, post)"></i>
+                        {{ post.comments }}
                     </a>
                 </div>
             </div>
