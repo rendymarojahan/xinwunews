@@ -127,84 +127,103 @@ angular.module('starter.controllers', [])
   ];
 })
 
-.controller('NewsCtrl', function($scope, $state, $ionicModal, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {
+.controller('NewsCtrl', function($scope, $state, $ionicModal, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, CurrentVisitorService, myCache) {
 	$scope.news = [];
-  $scope.new = [];
-  $scope.login = myCache.get('thisUserLogin');
+	$scope.new = [];
+	$scope.login = false;
 	$scope.isshow = false;
-    $scope.userId = myCache.get('thisMemberId')
-    $scope.photo = CurrentUserService.photo;
+	$scope.userId = myCache.get('thisMemberId')
+	$scope.photo = CurrentUserService.photo;
 
-    $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-        if (fromState.name === "app.news") {
-            refresh($scope.news, $scope, NewsFactory);
-        }
-    });
+	$scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+	    if (fromState.name === "app.news") {
+	        refresh($scope.news, $scope, NewsFactory);
+	    }
+	});
 
-    $scope.news = NewsFactory.getNews();
-      $scope.news.$loaded().then(function (x) {
-      	refresh($scope.news, $scope, NewsFactory);
-      }).catch(function (error) {
-          console.error("Error:", error);
-    });
+	$scope.news = NewsFactory.getNews();
+	$scope.news.$loaded().then(function (x) {
+	  	refresh($scope.news, $scope, NewsFactory);
+	  }).catch(function (error) {
+	      console.error("Error:", error);
+	});
 
-    $scope.doRefresh = function (){
+	$scope.doRefresh = function (){
 
-    	$scope.news = NewsFactory.getNews();
-      $scope.news.$loaded().then(function (x) {
-        $scope.news = $scope.new.concat($scope.news);
-        refresh($scope.news, $scope, NewsFactory);
-        $scope.$broadcast('scroll.refreshComplete');
-      }).catch(function (error) {
-        console.error("Error:", error);
-      });
+		$scope.news = NewsFactory.getNews();
+		$scope.news.$loaded().then(function (x) {
+			$scope.news = $scope.new.concat($scope.news);
+			refresh($scope.news, $scope, NewsFactory);
+			$scope.$broadcast('scroll.refreshComplete');
+		}).catch(function (error) {
+			console.error("Error:", error);
+		});
 
-    };
+	};
 
-    var filterBarInstance;
-    $scope.showFilterBar = function () {
-        filterBarInstance = $ionicFilterBar.show({
-            items: $scope.news,
-            update: function (filteredItems, filterText) {
-                $scope.news = filteredItems;
-            },
-            filterProperties: 'title'
-        });
-    };
+	var filterBarInstance;
+	$scope.showFilterBar = function () {
+	    filterBarInstance = $ionicFilterBar.show({
+	        items: $scope.news,
+	        update: function (filteredItems, filterText) {
+	            $scope.news = filteredItems;
+	        },
+	        filterProperties: 'title'
+	    });
+	};
 
-    $scope.listCanSwipe = true;
-    $scope.handleSwipeOptions = function ($event, post) {
-        $state.go('app.post', { postId: post.$id });
-    };
-    $scope.handleCommentOptions = function ($event, post) {
-      if ($scope.login = true) {
-        $state.go('app.post', { postId: post.$id });
-      }else{
-        alert("You must login to comment");
-      }
-    };
+	$scope.listCanSwipe = true;
+	$scope.handleSwipeOptions = function ($event, post) {
+	    $state.go('app.post', { postId: post.$id });
+	};
+	$scope.handleCommentOptions = function ($event, post) {
+		if (typeof CurrentUserService.firstname !== 'undefined' || CurrentVisitorService.displayName !== 'undefined') {
+	        $scope.login = true;
+		}else if (typeof CurrentUserService.firstname === 'undefined' || CurrentVisitorService.displayName === 'undefined'){
+			$scope.login = false;
+		}
+		if ($scope.login) {
+		$state.go('app.post', { postId: post.$id });
+		}else if(!$scope.login){
+		alert("You must login to comment");
+		}
+	};
 
 	$scope.isadmin = CurrentUserService.isadmin;
-  	$scope.$on('$ionicView.beforeEnter', function () {
-        if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
-            $scope.isadmin = CurrentUserService.isadmin;
-    }
-  });
+	$scope.$on('$ionicView.beforeEnter', function () {
+	    if (typeof CurrentUserService.isadmin !== 'undefined' && CurrentUserService.isadmin !== '') {
+	        $scope.isadmin = CurrentUserService.isadmin;
+		}
+	});
 
-    $scope.createPosting = function () {
-        PickTransactionServices.typeDisplaySelected = '';
-        PickTransactionServices.typeInternalSelected = '';
-        PickTransactionServices.dateSelected = '';
-        PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
-        PickTransactionServices.noteSelected = '';
-        PickTransactionServices.titleSelected = '';
-        PickTransactionServices.videoSelected = '';
-        $state.go('app.posting');
-    }
+	$scope.createPosting = function () {
+	    PickTransactionServices.typeDisplaySelected = '';
+	    PickTransactionServices.typeInternalSelected = '';
+	    PickTransactionServices.dateSelected = '';
+	    PickTransactionServices.photoSelected = 'R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+	    PickTransactionServices.noteSelected = '';
+	    PickTransactionServices.titleSelected = '';
+	    PickTransactionServices.videoSelected = '';
+	    $state.go('app.posting');
+	}
 
-    function refresh(news, $scope, NewsFactory) {
-    
-    }
+	function refresh(news, $scope, NewsFactory) {
+
+	    var index;
+	    //
+	    for (index = 0; index < news.length; ++index) {
+	        //
+	        var post = news[index];
+	        $scope.ccoments.NewsFactory.countComments(post.$id);
+	        $scope.ccoments.$loaded().then(function (x) {
+	        	post.comments = $scope.ccoments;
+	        })
+	        $scope.clikes.NewsFactory.countLikes(post.$id);
+	        $scope.clikes.$loaded().then(function (x) {
+	        	post.comments = $scope.clikes;
+	        })
+	    }
+	}
 })
 
 .controller('TutorialCtrl', function($scope, $state, $stateParams, NewsFactory, $ionicFilterBar, $ionicListDelegate, PickTransactionServices, CurrentUserService, myCache) {

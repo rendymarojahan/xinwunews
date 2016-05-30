@@ -146,6 +146,27 @@ angular.module('starter.services', [])
                 });
                 return deferred.promise;
             },
+            countComments: function (postid) {
+                var deferred = $q.defer();
+                ref = fb.child("postings").child("News").child(postid).child("commentars");
+                ref.once("value", function (snap) {
+                    if (snap.numChildren()) {
+                            deferred.resolve(snap.numChildren());
+                        }
+                    }, function (errorObject) {
+                        console.log("The read failed: " + errorObject.code);
+                });
+                return deferred.promise;
+            },
+            countLikes: function (postid) {
+                var deferred = $q.defer();
+                ref = fb.child("postings").child("News").child(postid).child("likers");
+                ref.once("value", function (snap) {
+                    var a = snap.numChildren();
+                    deferred.resolve(a);
+                });
+                return deferred.promise;
+            },
             getNewsComments: function (postid) {
                 ref = fb.child("postings").child("News").child(postid).child("commentars");
                 comments = $firebaseArray(ref);
