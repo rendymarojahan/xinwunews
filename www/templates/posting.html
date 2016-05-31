@@ -35,7 +35,7 @@
                 <img ng-if="currentItem.isphoto" class="full-image" src="data:image/jpeg;base64,{{currentItem.photo}}">
             </div>
             <div ng-if="currentItem.isvideo" class="video-container">
-                <iframe src='{{ currentItem.video }}' frameborder="0" width="560" height="315"></iframe>
+                <youtube-video video-id="currentItem.video"></youtube-video>
             </div>
             <div class="item range">
                 <i class="icon ion-ios-camera placeholder-icon" ng-click="pickPostPhoto()"></i>

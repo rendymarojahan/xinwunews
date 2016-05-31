@@ -1,4 +1,4 @@
-<ion-view view-title="Manage News">
+<ion-view view-title="Manage Tutorial">
     <ion-nav-buttons side="left">
         <button class="button button-icon icon ion-ios-minus-outline" ng-click="data.showDelete = !data.showDelete; data.showReorder = false"></button>
     </ion-nav-buttons>
@@ -10,7 +10,7 @@
             <ion-item ng-repeat="item in items" item="item" class="manage item-remove-animate">
                 <ion-delete-button class="ion-minus-circled" ng-click="delete(item)"></ion-delete-button>
                 <a class="item item-avatar">
-                  <iframe src='{{ item.video }}' frameborder="0" class="video-manage"></iframe>
+                  <youtube-video video-id="video"></youtube-video>
                   <h2>{{ item.title }}</h2>
                   <p>{{ item.note }}</p>
                 </a>

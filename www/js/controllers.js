@@ -388,7 +388,6 @@ angular.module('starter.controllers', [])
 
     $scope.hideValidationMessage = true;
     $scope.loadedClass = 'hidden';
-    $scope.video = "https://www.youtube.com/embed/";
     $scope.transactions = [];
     $scope.AccountTitle = '';
     $scope.inEditMode = false;
@@ -489,7 +488,7 @@ angular.module('starter.controllers', [])
           $scope.currentItem.isvideo = false;
           $scope.video = '';
         }else if (typeof PickTransactionServices.dateSelected !== 'undefined' && PickTransactionServices.videoSelected !== ''){
-          $scope.currentItem.video = $scope.video+PickTransactionServices.videoSelected;
+          $scope.currentItem.video = PickTransactionServices.videoSelected;
           $scope.currentItem.isvideo = true;
         }
         // Handle transaction date
@@ -1364,8 +1363,9 @@ angular.module('starter.controllers', [])
   });
 
   function refresh(items, $scope, NewsFactory) {
+
     
-    }
+  }
 
 })
 

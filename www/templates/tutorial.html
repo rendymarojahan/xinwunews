@@ -10,7 +10,7 @@
                 <div class="ink dark-bg">
                     <h2 ng-click="handleSwipeOptions($event, post)">{{ post.title }}</h2>
                     <div class="video-container">
-	                    <iframe src='{{ post.video }}' frameborder="0" width="560" height="315"></iframe>
+                        <youtube-video video-id="post.video"></youtube-video>
 	                </div>
                 </div>
                 <div class="item tabs tabs-secondary tabs-icon-left">
