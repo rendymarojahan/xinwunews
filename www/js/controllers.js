@@ -17,8 +17,27 @@ angular.module('starter.controllers', [])
           auth.$authWithOAuthToken("google", result.access_token).then(function(authData) {
               console.log("google login success");
               console.log(JSON.stringify(authData));
-              myCache.put('thisUserName', authData.displayName);
-              myCache.put('thisUserPhoto', authData.photoURL);
+              myCache.put('thisUserName', authData.name);
+              myCache.put('thisUserPhoto', authData.picture);
+              myCache.put('thisUserEmail', authData.email);
+              myCache.put('thisUserLogin', true);
+              CurrentVisitorService.updateUser(authData);
+              $scope.modal.hide();
+              $state.reload('app.news');
+          }, function(error) {
+              console.error("ERROR: " + error);
+          });
+      }, function(error) {
+          console.log("ERROR: " + error);
+      });
+  }
+
+  $scope.loginFacebook = function() {
+      $cordovaOauth.facebook("154096858329074", ["email"]).then(function(result) {
+          auth.$authWithOAuthToken("facebook", result.access_token).then(function(authData) {
+              console.log(JSON.stringify(authData));
+              myCache.put('thisUserName', authData.name);
+              myCache.put('thisUserPhoto', authData.picture);
               myCache.put('thisUserEmail', authData.email);
               myCache.put('thisUserLogin', true);
               CurrentVisitorService.updateUser(authData);
