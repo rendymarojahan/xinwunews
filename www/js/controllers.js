@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout, $rootScope, $firebaseAuth, $cordovaOauth, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
+.controller('AppCtrl', function($scope, $ionicModal, $timeout, $http, $rootScope, $firebaseAuth, $cordovaFacebook, $cordovaOauth, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
 
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
@@ -12,10 +12,32 @@ angular.module('starter.controllers', [])
   var auth = $firebaseAuth(fb);
  
   $scope.loginGoogle = function() {
-      $cordovaOauth.google("650716399232-al2qqn4rut5sd3qsmt5hrtbfpc932pb0.apps.googleusercontent.com", ["https://www.googleapis.com/auth/urlshortener", "https://www.googleapis.com/auth/userinfo.email", 
-      "https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/plus.me"]).then(function(result) {
-          auth.$authWithOAuthToken("google", result.access_token).then(function(authData) {
-              console.log("google login success");
+      $ionicLoading.show({
+          template: 'Logging in...'
+      });
+
+      window.plugins.googleplus.login(
+        {},
+        function (user_data) {
+          myCache.put('thisUserName', user_data.displayName);
+          myCache.put('thisUserPhoto', user_data.imageUrl);
+          myCache.put('thisUserEmail', user_data.email);
+          myCache.put('thisUserLogin', true);
+          $ionicLoading.hide();
+          $scope.modal.hide();
+          $state.reload('app.news');
+        },
+        function (msg) {
+          $ionicLoading.hide();
+          $state.reload('app.news');
+        }
+      );
+  }
+
+  $scope.loginTwitter = function() {
+      $cordovaOauth.twitter("Txi4J1Q8Zs4rOW6r8TVeLvWgo", "FN52V38KfKfjGeoDVCUiYoJCE4YxkFydggph07VOO6wM9XDo48").then(function(result) {
+          auth.$authWithOAuthToken("twitter", result.access_token).then(function(authData) {
+              console.log("Logged in as:", authData.uid);
               console.log(JSON.stringify(authData));
               myCache.put('thisUserName', authData.name);
               myCache.put('thisUserPhoto', authData.picture);
@@ -33,22 +55,55 @@ angular.module('starter.controllers', [])
   }
 
   $scope.loginFacebook = function() {
-      $cordovaOauth.facebook("154096858329074", ["email"]).then(function(result) {
-          auth.$authWithOAuthToken("facebook", result.access_token).then(function(authData) {
-              console.log(JSON.stringify(authData));
-              myCache.put('thisUserName', authData.name);
-              myCache.put('thisUserPhoto', authData.picture);
-              myCache.put('thisUserEmail', authData.email);
-              myCache.put('thisUserLogin', true);
-              CurrentVisitorService.updateUser(authData);
-              $scope.modal.hide();
-              $state.reload('app.news');
-          }, function(error) {
-              console.error("ERROR: " + error);
+
+    $cordovaFacebook.login(["public_profile", "email", "user_friends"])
+      .then(function(success) {
+        // { id: "634565435",
+        //   lastName: "bob"
+        //   ...
+        // }
+      }, function (error) {
+      // error
+    });
+
+    $cordovaFacebook.getLoginStatus().then(function(success){
+      if(success.status === 'connected'){
+        // The user is logged in and has authenticated your app, and response.authResponse supplies
+        // the user's ID, a valid access token, a signed request, and the time the access token
+        // and signed request each expire
+        console.log('getLoginStatus', success.status);
+
+        // Check if we have our user saved
+        var user = UserService.getUser('facebook');
+
+        if(!user.userID){
+          getFacebookProfileInfo(success.authResponse)
+          .then(function(profileInfo) {
+            myCache.put('thisUserName', profileInfo.name);
+            myCache.put('thisUserPhoto', "http://graph.facebook.com/" + success.authResponse.userID + "/picture?type=large");
+            myCache.put('thisUserEmail', profileInfo.email);
+            myCache.put('thisUserLogin', true);
+            $ionicLoading.hide();
+            $scope.modal.hide();
+            $state.reload('app.news');
+          }, function(fail){
+            // Fail get profile info
+            console.log('profile info fail', fail);
           });
-      }, function(error) {
-          console.log("ERROR: " + error);
-      });
+        }else{
+          $state.reload('app.news');
+        }
+      } else {
+        console.log('getLoginStatus', success.status);
+
+        $ionicLoading.show({
+          template: 'Logging in...'
+        });
+        facebookConnectPlugin.login(['email', 'public_profile'], fbLoginSuccess, fbLoginError);
+        $state.reload('app.news');
+      }
+    });
+      
   }
 
 
@@ -131,6 +186,51 @@ angular.module('starter.controllers', [])
   // Open the login modal
   $scope.login = function() {
     $scope.modal.show();
+  };
+
+  $scope.showLogOutMenu = function () {
+
+      // Show the action sheet
+      $ionicActionSheet.show({
+          destructiveText: 'Logout',
+          titleText: 'Are you sure you want to logout?',
+          cancelText: 'Cancel',
+          cancel: function () {
+              // add cancel code..
+          },
+          buttonClicked: function (index) {
+              //Called when one of the non-destructive buttons is clicked,
+              //with the index of the button that was clicked and the button object.
+              //Return true to close the action sheet, or false to keep it opened.
+              return true;
+          },
+          destructiveButtonClicked: function () {
+            $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
+            if (fromState.name === "tabsController") {
+                refresh($rootScope, $scope, PublicsFactory, CurrentUserService, $stateParams.memberPublicId, $stateParams.memberId);
+            }
+        });
+        function refresh($rootScope, $scope, PublicsFactory, CurrentUserService) {
+          this.firstname = '';
+              this.surename = '';
+              this.email = '';
+              this.group_id = '';
+              this.public_id = '';
+              this.defaultdate = '';
+              this.defaultbalance = '';
+              this.lastdate = '';
+              this.group_name = '';
+        }
+        $ionicHistory.clearCache('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId');
+            $ionicHistory.clearHistory();
+          $ionicHistory.nextViewOptions({ disableBack: true, historyRoot: true });
+              $rootScope.authData = '';
+              fb.unauth();
+              myCache.remove('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId'); 
+              myCache.removeAll();
+              $state.go('app.news');
+          }
+      });
   };
 
   // Perform the login action when the user submits the login form

@@ -19,10 +19,16 @@ angular.module('starter', ['ionic', 'starter.controllers', 'starter.directives' 
       // org.apache.cordova.statusbar required
       StatusBar.styleDefault();
     }
+    if (window.cordova.platformId == "browser") {
+        facebookConnectPlugin.browserInit(appId, version);
+        // version is optional. It refers to the version of API you may want to use.
+    }
   });
 })
 
 .config(function($stateProvider, $urlRouterProvider, $sceDelegateProvider) {
+
+  
 
   $sceDelegateProvider.resourceUrlWhitelist([
      // Allow same origin resource loads.
