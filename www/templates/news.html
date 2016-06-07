@@ -13,7 +13,7 @@
                     <div class="item item-avatar item-text-wrap">
                         <span class="avatar"><img src="data:image/jpeg;base64,{{ post.photo }}"></img></span>
                         <strong ng-click="handleSwipeOptions($event, post)">{{ post.title }}</strong><br> 
-                        <span>{{ post.note }}</span>
+                        <span>{{ post.note | limitTo : 150 }}...</span>
                         <a ng-if="isshow" class="image"><img src="data:image/jpeg;base64,{{ post.photo }}"></a>
                         <div class="card-footer text-left">
                                 <i class="pull-left icon ion-clock"></i>{{ post.date| amCalendar:referenceTime:formats }}

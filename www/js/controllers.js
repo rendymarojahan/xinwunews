@@ -1,6 +1,6 @@
 angular.module('starter.controllers', [])
 
-.controller('AppCtrl', function($scope, $ionicModal, $timeout, $http, $rootScope, $firebaseAuth, $cordovaFacebook, $cordovaOauth, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
+.controller('AppCtrl', function($scope, $ionicModal, $ionicActionSheet, $timeout, $http, $rootScope, $firebaseAuth, $cordovaFacebook, $cordovaOauth, $stateParams, $ionicHistory, $cacheFactory, $ionicLoading, $ionicPopup, $state, MembersFactory, myCache, CurrentUserService) {
 
   // With the new view caching in Ionic, Controllers are only called
   // when they are recreated or on app start, instead of every page change.
@@ -205,30 +205,15 @@ angular.module('starter.controllers', [])
               return true;
           },
           destructiveButtonClicked: function () {
-            $scope.$on('$stateChangeSuccess', function (event, toState, toParams, fromState, fromParams) {
-            if (fromState.name === "tabsController") {
-                refresh($rootScope, $scope, PublicsFactory, CurrentUserService, $stateParams.memberPublicId, $stateParams.memberId);
-            }
-        });
-        function refresh($rootScope, $scope, PublicsFactory, CurrentUserService) {
-          this.firstname = '';
-              this.surename = '';
-              this.email = '';
-              this.group_id = '';
-              this.public_id = '';
-              this.defaultdate = '';
-              this.defaultbalance = '';
-              this.lastdate = '';
-              this.group_name = '';
-        }
-        $ionicHistory.clearCache('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId');
+            $ionicHistory.clearCache('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId');
             $ionicHistory.clearHistory();
-          $ionicHistory.nextViewOptions({ disableBack: true, historyRoot: true });
-              $rootScope.authData = '';
-              fb.unauth();
-              myCache.remove('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId'); 
-              myCache.removeAll();
-              $state.go('app.news');
+            $rootScope.authData = '';
+            fb.unauth();
+            myCache.remove('thisGroupId', 'thisUserName', 'thisMemberId', 'thisPublicId'); 
+            myCache.removeAll();
+            $state.reload('app.news');
+            CurrentUserService.updateUser('');
+            CurrentUserService.isadmin = false;
           }
       });
   };
@@ -793,8 +778,8 @@ angular.module('starter.controllers', [])
             $scope.inEditMode = false;
             //
         } else {
-            $scope.currentItem.likes = '';
-            $scope.currentItem.comments = '';
+            $scope.currentItem.likes = 0;
+            $scope.currentItem.comments = 0;
             $scope.currentItem.date = Firebase.ServerValue.TIMESTAMP;
             $scope.currentItem.addedby = myCache.get('thisUserName');
             $scope.currentItem.userid = myCache.get('thisMemberId');
@@ -865,7 +850,8 @@ angular.module('starter.controllers', [])
       $scope.hideValidationMessage = true;
       NewsFactory.createComment($stateParams.postId, postcomment, $scope.newstype);
       $state.reload('app.post');
-    }
+      postcomment.note = '';
+      }
   };
 
   $scope.doRefresh = function (){
@@ -939,7 +925,8 @@ angular.module('starter.controllers', [])
       $scope.hideValidationMessage = true;
       NewsFactory.createComment($stateParams.postId, postcomment, $scope.newstype);
       $state.reload('app.post');
-    }
+      postcomment.note = '';
+      }
   };
 
   $scope.doRefresh = function (){
@@ -1364,8 +1351,8 @@ angular.module('starter.controllers', [])
   $scope.delete = function (item) {
         // Show the action sheet
         $ionicActionSheet.show({
-            destructiveText: 'Delete Tips',
-            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tips',
+            destructiveText: 'Delete News',
+            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the news',
             cancelText: 'Cancel',
             cancel: function () {
                 // add cancel code..
@@ -1446,8 +1433,8 @@ angular.module('starter.controllers', [])
   $scope.delete = function (item) {
         // Show the action sheet
         $ionicActionSheet.show({
-            destructiveText: 'Delete Tips',
-            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tips',
+            destructiveText: 'Delete Tutorial',
+            titleText: 'Are you sure you want to delete ' + item.title + '? This will permanently delete the tutorial',
             cancelText: 'Cancel',
             cancel: function () {
                 // add cancel code..

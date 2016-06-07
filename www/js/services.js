@@ -191,17 +191,17 @@ angular.module('starter.services', [])
 
             },
             getNews: function () {
-                ref = fb.child("postings").child("News");
+                ref = fb.child("postings").child("News").orderByChild('date');
                 publicRef = $firebaseArray(ref);
                 return publicRef;
             },
             getTutorial: function () {
-                ref = fb.child("postings").child("Tutorial");
+                ref = fb.child("postings").child("Tutorial").orderByChild('date');
                 publicRef = $firebaseArray(ref);
                 return publicRef;
             },
             getTips: function () {
-                ref = fb.child("postings").child("Tips");
+                ref = fb.child("postings").child("Tips").orderByChild('date');
                 publicRef = $firebaseArray(ref);
                 return publicRef;
             },
